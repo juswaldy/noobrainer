@@ -21,6 +21,7 @@ from utils import tomo
 # Prepare configs/settings and load models.
 
 class Settings(BaseSettings):
+    api_version: str = '2.0'
     api_title: str = 'noobrainer API'
     api_description: str = 'API for GLG Capstone by {bryantaekim, dslee47, juswaldy} @ gmail.com'
     ner_model_path: str = 'models/ner_model.pkl'
@@ -100,7 +101,7 @@ class WordResult(BaseModel):
 
 app = FastAPI(title=settings.api_title,
     description=settings.api_description,
-    version="1.0",
+    version=settings.api_version,
 )
 
 
