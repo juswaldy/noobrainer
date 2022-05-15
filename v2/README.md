@@ -46,4 +46,4 @@ docker run -it --gpus all --rm -v /tmp/noobrainer/v2/models:/models -p 8000:8000
 
 Point your browser to http://localhost:8000/docs.
 
-![docs](https://raw.githubusercontent.com/juswaldy/noobrainer/v2/docs.PNG)
+![docs](https://raw.githubusercontent.com/juswaldy/noobrainer/main/v2/docs.PNG)
