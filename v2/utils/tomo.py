@@ -9,12 +9,32 @@
     def augment_with_time_columns()
 """
 
-from pydantic import BaseModel
-from typing import List
+import numpy as np
 from pandas import DataFrame
 from datetime import datetime
 import re
 import math
+import sys
+sys.path.append('../')
+from models.schemas import *
+
+
+################################################################################
+# API utilities.
+def get_topic_results(
+    topics_words: List[List[str]],
+    words_scores: List[List[float]],
+    topic_scores: List[float],
+    topic_nums: List[int]
+) -> List[TopicResult]:
+    topic_results = []
+    for words, word_scores, topic_score, topic_num in zip(topics_words, words_scores, topic_scores, topic_nums):
+        topic_results.append(TopicResult(
+            topic_num=topic_num,
+            topic_words=list(words),
+            word_scores=list(word_scores),
+            topic_score=topic_score))
+    return topic_results
 
 
 ################################################################################
@@ -33,7 +53,10 @@ def load(model_path: str) -> object:
         The loaded model.
     """
     from top2vec import Top2Vec
-    return Top2Vec.load(model_path)
+    model = Top2Vec.load(model_path)
+    doc_id_type = str if model.doc_id_type is np.str_ else int
+    has_documents = False if model.documents is None else True
+    return model, doc_id_type, has_documents
 
 
 ################################################################################
