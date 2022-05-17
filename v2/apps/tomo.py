@@ -5,7 +5,6 @@
           Juswaldy Jusman juswaldy at gmail dot com
 @description: Streamlit Topic Modeling app file.
 """
-
 import streamlit as st
 import json
 import requests
@@ -47,10 +46,22 @@ def app():
     header = 'Topic Modeling'
 
     # Page elements.
+    with st.form(key='main_form'):
+        query = st.text_area(
+            label='',
+            height=200,
+            max_chars=1000,
+            help='Tell us what you are thinking',
+            placeholder='Enter your request/report here...')
+        submitted = st.form_submit_button(label='Submit')
+    
+    if submitted:
+        st.session_state['query'] = query
+
     with st.sidebar:
         st.subheader(header)
-        st.session_state.num_topics = st.slider('Number of topics', min_value=1, max_value=40)
-        st.session_state.topics_reduced = st.checkbox('Topics reduced')
+        st.session_state.num_topics = st.slider('Number of topics', min_value=1, max_value=40, value=10)
+        st.session_state.topics_reduced = st.checkbox('Topics reduced', value=False)
 
     # Prepare topic query request from the current input fields.
     request = json.dumps(PredictionRequest(
@@ -65,7 +76,7 @@ def app():
         st.session_state.last_request = ''
     else:
         # Show header before wordclouds.
-        st.subheader('Similar topics: (% cosine similarity)')
+        st.subheader('Similar topics: (`% cosine similarity`)')
 
         # Send topic query and show response as wordclouds.
         numcols = 5
@@ -101,3 +112,4 @@ def app():
             # Save request to session state.
             st.session_state.last_request = request
     
+        # Top 10 Section, Title, Article and Time

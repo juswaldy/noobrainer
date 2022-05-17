@@ -6,6 +6,11 @@
 @description: Streamlit Named Entity Recognition app file.
 """
 import streamlit as st
+import pandas as pd
+import sys
+sys.path.append('../')
+from models.schemas import *
+from utils.ner import *
 
 def app():
     """ Named Entity Recognition app """
@@ -16,3 +21,16 @@ def app():
     # Page elements.
     with st.sidebar:
         st.subheader(header)
+    
+    # Load corpus.
+    df = pd.read_csv('data/small-articles-single.csv', low_memory=False).reset_index(drop=True)
+
+    # Get keywords.
+    keywords = set()
+    for words in df.topic_words.values:
+        keywords.update(eval(words.replace('\n', '').replace(' ', ',')))
+
+    # Get positive and negative keywords.
+    col1, col2, _ = st.columns([1, 1, 2])
+    keywords_pos = col1.multiselect('Select keywords', list(keywords))
+    keywords_neg = col2.multiselect('Select negative keywords', list(keywords.difference(set(keywords_pos))))

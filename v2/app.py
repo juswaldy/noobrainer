@@ -11,6 +11,7 @@ import streamlit as st
 from multiapp import MultiApp
 from apps import ner, clustr, tomo
 from PIL import Image
+import pandas as pd
 
 ################################################################################
 # Page settings.
@@ -35,21 +36,6 @@ session_objects = {
 for obj, val in session_objects.items():
     if obj not in st.session_state:
         st.session_state[obj] = val
-
-################################################################################
-# The main query form.
-
-with st.form(key='main_form'):
-    query = st.text_area(
-        label='',
-        height=200,
-        max_chars=500,
-        help='Tell us what you are thinking',
-        placeholder='Enter your request/report here...')
-    submitted = st.form_submit_button(label='Submit')
-
-if submitted:
-    st.session_state['query'] = query
 
 ################################################################################
 # Main app.
