@@ -38,35 +38,40 @@ def app():
         d = st.date_input('Select date')
 
     # Load corpus.
-    corpus = pd.read_csv('data/health_tech_time.csv', low_memory=False).reset_index(drop=True)
+    corpus = pd.read_csv('data/health_tech_time.csv', low_memory=False).reset_index(drop=True).fillna('none')
 
     # Get keywords from the user.
     keywords = st.text_input('Enter keywords separated by commas:')
     subset_cat = keywords.replace(' ', '').split(',')
     cols = ['id', 'date', 'year', 'month', 'day', 'section_clean', 'title_clean', 'article_clean']
     
-    st.write(subset_cat, cols, setvar.label, setvar.feature, setvar.time_period, setvar.year)
-    sub_corpus = prepCorpus(corpus, subset_cat, cols, setvar.label, setvar.feature, setvar.time_period, d.year)
+    import time
+    start = time.time()
+    cos_sim, tfidf_matrix, _labels, _raw_text = get_tfidf(corpus, subset_cat, cols, setvar.label, setvar.feature, setvar.time_period, setvar.year, setvar.times)
+    end = time.time()
+    st.write((end - start))
 
-    st.dataframe(sub_corpus)
-    
-    _raw_text = sub_corpus[sub_corpus[setvar.time_period].isin([setvar.times])][setvar.feature]
-    _labels = sub_corpus[sub_corpus[setvar.time_period].isin([setvar.times])][setvar.label].values
-    
-    # Calculate similiarity and transform the corpus into a tf-idf matrix
-    cos_sim, tfidf_matrix = tfidf_vectorizer(_raw_text, max_df=.5, min_df=.025)
-    
     ### Plot dendrograms and distances among clusters
-    #Z = _plot_dendrogram(cos_sim, _labels, zoom_in=False)
-    #_ = _plot_dendrogram(cos_sim, _labels, zoom_xlim=4500)
-    #_plot_distance(Z, 25)
-    #_ = _plot_dendrogram(cos_sim, _labels, threshold=90, zoom_xlim=4500)
+    fig, Z = plot_dendrogram(cos_sim, _labels, zoom_in=False)
+    st.pyplot(fig)
+
+    fig, _ = plot_dendrogram(cos_sim, _labels, zoom_xlim=4500)
+    st.pyplot(fig)
+
+    fig = plot_distance(Z, 25)
+    st.pyplot(fig)
     
-    ### Visualize the select clusters
+    # Get user specified threshold for number of clusters.
+    threshold = st.slider('Select number of clusters', 40, 200, 5)
+    fig, _ = plot_dendrogram(cos_sim, _labels, threshold=threshold, zoom_xlim=4500)
+    st.pyplot(fig)
+
+    #### Visualize the select clusters
     #_n_clusters = 4
     #clusters = _clustering(tfidf_matrix, _n_clusters)
     #xs, ys = _reduce_dim(cos_sim, setvar.rand_state)
 
-    #df = pd.DataFrame(dict(x=xs, y=ys, segment=clusters, label=_labels, text=_raw_text.values)) 
+    #df = pd.DataFrame(dict(x=xs, y=ys, segment=clusters, label=_labels, text=_raw_text.values))
+    #st.dataframe(df)
     
     #_plot_clusters(df)

@@ -1,14 +1,23 @@
-# -*- coding: utf-8 -*-
 """
-@author: Bryan T. Kim
-@contact: bryantaekim at gmail dot com
-@overview: FourthBrain 2022 MLE Capstone project - GLG NLP 
-    1. NER modeling
-    2. Hierarchical clustering
-    3. Topic modeling
-@content: This part covers (2) Hierarchical clustering
+@author: noobrainers
+@contact: Bryan T. Kim bryantaekim at gmail dot com
+          Daniel Lee dslee47 at gmail dot com
+          Juswaldy Jusman juswaldy at gmail dot com
+@description: Utility functions for Hierarchical Clustering.
+@content:
+    def _reduce_dim(cos_sim, random_state):
+    def _clustering(tfidf_matrix, _n_clusters):
+    def _plot_distance(Z, _top):
+    def _plot_clusters(df_2d, save=False):
+    def _plot_dendrogram(cos_sim, target, _p=30, _trunc_mode=None, fw=15, fh=10, zoom_in=True, zoom_xlim = 2500, threshold=0, save_pic=False):
+    def _tokenize_and_stem(text):
+    def tfidf_vectorizer(_raw_text, max_df=.5, min_df=10, gram=3, max_features=20*10000, n_show=20):
+    def _tagPos(text):
+    def prepCorpus(corpus, subset_cat, cols, label, feature, time_period, year):
+    def get_tfidf(corpus, subset_cat, cols, label, feature, time_period, year, times):
+    def plot_dendrogram(cos_sim, target, _p=30, _trunc_mode=None, fw=15, fh=10, zoom_in=True, zoom_xlim = 2500, threshold=0, save_pic=False):
+    def plot_distance(Z, _top):
 """
-print(__doc__)
 
 ## Import required packages
 import pandas as pd, numpy as np, sys, mpld3, matplotlib.pyplot as plt, seaborn as sns
@@ -199,7 +208,7 @@ def _tagPos(text):
                                                           )])
 
 def prepCorpus(corpus, subset_cat, cols, label, feature, time_period, year):
-    sub_corpus = corpus[corpus[label].str.contains('|'.join(subset_cat))][cols]
+    sub_corpus = corpus[(corpus[label].str.contains('|'.join(subset_cat))) & (corpus['year'] == int(year))][cols]
     sub_corpus.drop_duplicates(subset=[feature], inplace=True)
     sub_corpus.drop(sub_corpus[sub_corpus[feature] == 'none'].index, inplace=True)
     
@@ -212,3 +221,71 @@ def prepCorpus(corpus, subset_cat, cols, label, feature, time_period, year):
     print(sub_corpus.head(5))
 
     return sub_corpus
+
+def get_tfidf(corpus, subset_cat, cols, label, feature, time_period, year, times):
+    sub_corpus = prepCorpus(corpus, subset_cat, cols, label, feature, time_period, year)
+
+    _raw_text = sub_corpus[sub_corpus[time_period].isin([times])][feature]
+    _labels = sub_corpus[sub_corpus[time_period].isin([times])][label].values
+
+    # Calculate similiarity and transform the corpus into a tf-idf matrix
+    cos_sim, tfidf_matrix = tfidf_vectorizer(_raw_text, max_df=.5, min_df=.025)
+
+    return cos_sim, tfidf_matrix, _labels, _raw_text
+
+def plot_dendrogram(cos_sim, target, _p=30, _trunc_mode=None, fw=15, fh=10, zoom_in=True, zoom_xlim = 2500, threshold=0, save_pic=False):
+    
+    linkage_matrix = ward(cos_sim)
+
+    fig = plt.figure(figsize=(fw, fh))
+    dendrogram(linkage_matrix
+              ,labels=target
+              ,above_threshold_color='y'
+              ,p=_p
+              ,truncate_mode=_trunc_mode
+               )
+    if zoom_in:
+        plt.xlim(0, zoom_xlim)
+        plt.title('Dendrogram - zoomed in up to '+ str(zoom_xlim))
+    else:
+        plt.title('Dendrogram - All data points')
+    
+    if threshold > 0:
+        plt.axhline(y=threshold, color='r', linestyle='--')
+        
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    # plt.show()
+    
+    if save_pic:
+        plt.savefig('hierarchical_clusters_dendrogram.png')
+        
+    # plt.close()
+    return fig, linkage_matrix.astype(int)
+
+def plot_distance(Z, _top):
+    idx = np.argsort(Z[:,-1])
+    Z = Z[idx][::-1][:_top]
+    
+    df = pd.DataFrame(
+        columns=Z[:,0].astype(int), 
+        index=Z[:,1].astype(int)
+    )
+    
+    for i, d in enumerate(Z[:,2]):
+        df.iloc[i, i] = d
+    
+    df.fillna(0, inplace=True)
+    # mask everything but diagonal
+    mask = np.ones(df.shape, dtype=bool)
+    np.fill_diagonal(mask, 0)
+    
+    # plot the heatmap
+    fig = plt.figure(figsize=(20,20))
+    sns.heatmap(df, 
+                annot=True, fmt='.0f', cmap="YlGnBu", xticklabels=False, yticklabels=False,
+                mask=mask)
+    plt.title("Top " + str(_top) + " Distances")
+    #plt.show()
+    #plt.close()
+    return fig

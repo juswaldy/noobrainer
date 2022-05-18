@@ -273,7 +273,7 @@ def main():
                 topic_wordss, word_scoress, topic_ids = model.get_topics(num_topics=config.num_topics, reduced=True)
                 for topic_words, word_scores, topic_id in zip(topic_ids, topic_wordss, word_scoress):
                     print(f'{topic_id} {topic_words} {word_scores}')
-                model.save('{}/small-titles-single.t2v'.format(args.outputfolder))
+                model.save('{}/tomo-singlewords-titles.t2v'.format(args.outputfolder))
 
 
 if __name__ == '__main__':

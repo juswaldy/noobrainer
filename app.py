@@ -29,9 +29,11 @@ st.set_page_config(
 session_objects = {
     'query': '',
     'num_topics': -1,
+    'numwords_per_topic': -1,
     'topics_reduced': False,
     'last_request': '',
-    'tomo_wordclouds': []
+    'tomo_wordclouds': [],
+    'tomo_model_path': 'models/tomo-singlewords-articles.t2v'
 }
 for obj, val in session_objects.items():
     if obj not in st.session_state:

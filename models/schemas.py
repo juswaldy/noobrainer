@@ -9,6 +9,10 @@ class PredictionRequest(BaseModel):
     num_topics: int
     topics_reduced: bool
 
+class ModelRefresh(BaseModel):
+    fn: str
+    model_path: str
+
 ################################################################################
 # NER schemas.
 

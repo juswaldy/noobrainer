@@ -8,6 +8,7 @@
 import streamlit as st
 import json
 import requests
+from glob import glob
 import sys
 sys.path.append('../')
 from models.schemas import *
@@ -60,15 +61,29 @@ def app():
 
     with st.sidebar:
         st.subheader(header)
+        model_path = st.selectbox('Choose a Model', glob('models/tomo-*'))
         st.session_state.num_topics = st.slider('Number of topics', min_value=1, max_value=40, value=10)
         st.session_state.topics_reduced = st.checkbox('Topics reduced', value=False)
-        st.slider('Number of words per topic', min_value=5, max_value=50, value=20)
+        numwords_per_topic = st.slider('Number of words per topic', min_value=5, max_value=50, value=20)
+
+    # If a different model was selected, refresh the backend.
+    if model_path != st.session_state.tomo_model_path:
+        t = st.empty()
+        t.write('Loading model...')
+        request = json.dumps(ModelRefresh(
+            fn='tomo',
+            model_path=model_path
+        ).__dict__)
+        response = requests.post('http://localhost:8000/tomo/model/refresh', data=request)
+        st.session_state.tomo_model_path = response.json()['model_path']
+        t.write()
 
     # Prepare topic query request from the current input fields.
     request = json.dumps(PredictionRequest(
         query_string=st.session_state.query,
         num_topics=st.session_state.num_topics,
-        topics_reduced=st.session_state.topics_reduced).__dict__)
+        topics_reduced=st.session_state.topics_reduced
+    ).__dict__)
 
     # If query is empty, reset the session state.
     if st.session_state.query == '':
@@ -82,7 +97,7 @@ def app():
         # Send topic query and show response as wordclouds.
         numcols = 5
         cols = st.columns(numcols)
-        if st.session_state.last_request == request:
+        if (st.session_state.last_request == request) and (st.session_state.numwords_per_topic == numwords_per_topic):
 
             # If parameters haven't changed, show the previous wordclouds.
             n = 0
@@ -101,7 +116,7 @@ def app():
             bgcolor = random.choice(wordcloud_backgrounds)
             for r in response.json():
                 # Generate wordcloud from words/scores.
-                topic_word_scores = dict(zip(r['topic_words'], softmax(r['word_scores'])))
+                topic_word_scores = dict(zip(r['topic_words'][:numwords_per_topic], softmax(r['word_scores'][:numwords_per_topic])))
                 img = WordCloud(width=320, height=240, background_color=bgcolor).generate_from_frequencies(topic_word_scores).to_image()
                 
                 # Display wordcloud.
@@ -110,7 +125,8 @@ def app():
                 # Save wordcloud to session state.
                 st.session_state.tomo_wordclouds.append([r['topic_score'], img])
 
-            # Save request to session state.
+            # Save session state.
             st.session_state.last_request = request
+            st.session_state.numwords_per_topic = numwords_per_topic
     
         # Top 10 Section, Title, Article and Time

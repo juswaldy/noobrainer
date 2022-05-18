@@ -5,6 +5,7 @@
           Juswaldy Jusman juswaldy at gmail dot com
 @description: Utility functions for Topic Modeling.
 @content:
+    def get_topic_results()
     def load()
     def augment_with_time_columns()
 """
@@ -54,9 +55,7 @@ def load(model_path: str) -> object:
     """
     from top2vec import Top2Vec
     model = Top2Vec.load(model_path)
-    doc_id_type = str if model.doc_id_type is np.str_ else int
-    has_documents = False if model.documents is None else True
-    return model, doc_id_type, has_documents
+    return model
 
 
 ################################################################################
