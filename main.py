@@ -76,13 +76,6 @@ def health():
 def _ner():
     return "Almost there!"
 
-@app.post("/ner/model/refresh",
-    response_model=ModelRefresh,
-    description="Refresh NER with a new model file",
-    tags=["Named Entity Recognition"])
-async def ner_refresh(request: ModelRefresh):
-    return ModelRefresh(fn='ner', model_path='Not implemented yet!')
-
 ################################################################################
 # Hierarchical Clustering endpoints.
 
@@ -92,13 +85,6 @@ async def ner_refresh(request: ModelRefresh):
 def _clustr():
     return "Wait for it!"
 
-@app.post("/clustr/model/refresh",
-    response_model=ModelRefresh,
-    description="Refresh Clustering with a new model file",
-    tags=["Hierarchical Clustering"])
-async def clustr_refresh(request: ModelRefresh):
-    return ModelRefresh(fn='clustr', model_path='Not implemented yet!')
-
 ################################################################################
 # Topic Modeling endpoints.
 
@@ -107,15 +93,6 @@ async def clustr_refresh(request: ModelRefresh):
     tags=["Topic Modeling"])
 def _tomo():
     return "Friendly tomo!"
-
-@app.post("/tomo/model/refresh",
-    response_model=ModelRefresh,
-    description="Refresh Topic Modeling with a new model file",
-    tags=["Topic Modeling"])
-async def tomo_refresh(request: ModelRefresh):
-    settings.top2vec = tomo.load(request.model_path)
-    model_path = request.model_path if settings.top2vec else f'Model {request.model_path} not found!'
-    return ModelRefresh(fn='tomo', model_path=model_path)
 
 @app.get("/tomo/topics/number",
     response_model=NumTopics,

@@ -6,6 +6,7 @@
 @description: Streamlit Topic Modeling app file.
 """
 import streamlit as st
+from st_click_detector import click_detector
 import json
 import requests
 from glob import glob
@@ -38,6 +39,17 @@ def display_topic_wordcloud(img, cols, numcols, n, topic_score):
     if n >= numcols:
         n = 0
     return n
+
+def display_topic_wordcloud_clickable(img, cols, numcols, n, topic_score, topic_num):
+    """ Display clickable topic wordcloud """
+    with cols[n].container():
+        cols[n].write('`{:.1%}`'.format(topic_score))
+        cols[n].image(img, use_column_width=True)
+        cols[n].button()
+    n += 1
+    if n >= numcols:
+        n = 0
+    return n
     
 
 def app():
@@ -61,22 +73,10 @@ def app():
 
     with st.sidebar:
         st.subheader(header)
-        model_path = st.selectbox('Choose a Model', glob('models/tomo-*'))
+        st.session_state.tomo_model_path = st.selectbox('Choose a Model', glob('models/tomo-*'))
         st.session_state.num_topics = st.slider('Number of topics', min_value=1, max_value=40, value=10)
         st.session_state.topics_reduced = st.checkbox('Topics reduced', value=False)
         numwords_per_topic = st.slider('Number of words per topic', min_value=5, max_value=50, value=20)
-
-    # If a different model was selected, refresh the backend.
-    if model_path != st.session_state.tomo_model_path:
-        t = st.empty()
-        t.write('Loading model...')
-        request = json.dumps(ModelRefresh(
-            fn='tomo',
-            model_path=model_path
-        ).__dict__)
-        response = requests.post('http://localhost:8000/tomo/model/refresh', data=request)
-        st.session_state.tomo_model_path = response.json()['model_path']
-        t.write()
 
     # Prepare topic query request from the current input fields.
     request = json.dumps(PredictionRequest(
@@ -101,8 +101,8 @@ def app():
 
             # If parameters haven't changed, show the previous wordclouds.
             n = 0
-            for (topic_score, img) in st.session_state.tomo_wordclouds:
-                n = display_topic_wordcloud(img, cols, numcols, n, topic_score)
+            for (topic_num, topic_score, img) in st.session_state.tomo_wordclouds:
+                n = display_topic_wordcloud(img, cols, numcols, n, topic_score, topic_num)
 
         else:
             del st.session_state.tomo_wordclouds
@@ -120,10 +120,10 @@ def app():
                 img = WordCloud(width=320, height=240, background_color=bgcolor).generate_from_frequencies(topic_word_scores).to_image()
                 
                 # Display wordcloud.
-                n = display_topic_wordcloud(img, cols, numcols, n, r['topic_score'])
+                n = display_topic_wordcloud(img, cols, numcols, n, r['topic_score'], r['topic_num'])
 
                 # Save wordcloud to session state.
-                st.session_state.tomo_wordclouds.append([r['topic_score'], img])
+                st.session_state.tomo_wordclouds.append([r['topic_num'], r['topic_score'], img])
 
             # Save session state.
             st.session_state.last_request = request

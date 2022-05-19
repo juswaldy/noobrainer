@@ -5,8 +5,8 @@
           Juswaldy Jusman juswaldy at gmail dot com
 @description: Utility functions for Hierarchical Clustering.
 @content:
-    def _reduce_dim(cos_sim, random_state):
-    def _clustering(tfidf_matrix, _n_clusters):
+    def reduce_dim(cos_sim, random_state):
+    def clustering(tfidf_matrix, _n_clusters):
     def _plot_distance(Z, _top):
     def _plot_clusters(df_2d, save=False):
     def _plot_dendrogram(cos_sim, target, _p=30, _trunc_mode=None, fw=15, fh=10, zoom_in=True, zoom_xlim = 2500, threshold=0, save_pic=False):
@@ -17,9 +17,11 @@
     def get_tfidf(corpus, subset_cat, cols, label, feature, time_period, year, times):
     def plot_dendrogram(cos_sim, target, _p=30, _trunc_mode=None, fw=15, fh=10, zoom_in=True, zoom_xlim = 2500, threshold=0, save_pic=False):
     def plot_distance(Z, _top):
+    def plot_clusters(df_2d, save=False):
 """
 
 ## Import required packages
+from tkinter import W
 import pandas as pd, numpy as np, sys, mpld3, matplotlib.pyplot as plt, seaborn as sns
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.manifold import MDS
@@ -33,13 +35,13 @@ nltk.download('stopwords')
 nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
 
-def _reduce_dim(cos_sim, random_state):
+def reduce_dim(cos_sim, random_state):
     ## Dimension reduced to 2D for visualization - xs,ys
     mds = MDS(n_components=2, dissimilarity="precomputed", random_state=random_state)
     pos = mds.fit_transform(cos_sim)
     return pos[:, 0], pos[:, 1]
 
-def _clustering(tfidf_matrix, _n_clusters):
+def clustering(tfidf_matrix, _n_clusters):
     cluster = AgglomerativeClustering(n_clusters=_n_clusters, affinity='euclidean', linkage='ward')
     cluster.fit_predict(tfidf_matrix.toarray())
     return cluster.labels_
@@ -182,7 +184,7 @@ def _tokenize_and_stem(text):
     stems = [stemmer.stem(t) for t in tokens if t not in stopwords]
     return stems
 
-def tfidf_vectorizer(_raw_text, max_df=.5, min_df=10, gram=3, max_features=20*10000, n_show=20):
+def _tfidf_vectorizer(_raw_text, max_df=.5, min_df=10, gram=3, max_features=20*10000, n_show=20):
     tfidf_vectorizer = TfidfVectorizer(max_df=max_df, min_df=min_df, max_features=max_features,\
                                        tokenizer=_tokenize_and_stem, ngram_range=(1,gram))
     tfidf_matrix = tfidf_vectorizer.fit_transform(_raw_text)
@@ -222,14 +224,14 @@ def prepCorpus(corpus, subset_cat, cols, label, feature, time_period, year):
 
     return sub_corpus
 
-def get_tfidf(corpus, subset_cat, cols, label, feature, time_period, year, times):
+def get_tfidf(corpus, subset_cat, cols, label, feature, datefrom, dateto):
     sub_corpus = prepCorpus(corpus, subset_cat, cols, label, feature, time_period, year)
 
     _raw_text = sub_corpus[sub_corpus[time_period].isin([times])][feature]
     _labels = sub_corpus[sub_corpus[time_period].isin([times])][label].values
 
     # Calculate similiarity and transform the corpus into a tf-idf matrix
-    cos_sim, tfidf_matrix = tfidf_vectorizer(_raw_text, max_df=.5, min_df=.025)
+    cos_sim, tfidf_matrix = _tfidf_vectorizer(_raw_text, max_df=.5, min_df=.025)
 
     return cos_sim, tfidf_matrix, _labels, _raw_text
 
@@ -289,3 +291,39 @@ def plot_distance(Z, _top):
     #plt.show()
     #plt.close()
     return fig
+
+def plot_clusters(df_2d, save=False):
+    fig, ax = plt.subplots(figsize=(14,6))
+    ax.margins(0.05)
+
+    for c, group in df_2d.groupby('segment'):
+        points = ax.plot(group.x, group.y, marker='o',label=c, linestyle='', ms=15)
+        ax.set_aspect('auto')
+        clusters = list(group.label)
+        
+        #set tooltip using points, labels and the already defined 'css'
+        tooltip = mpld3.plugins.PointHTMLTooltip(points[0], clusters, voffset=10, hoffset=10, css=custom_css.css)
+        #connect tooltip to fig
+        mpld3.plugins.connect(fig, tooltip, TopToolbar())    
+        
+        #set tick marks as blank
+        ax.axes.get_xaxis().set_ticks([])
+        ax.axes.get_yaxis().set_ticks([])
+        
+        #set axis as blank
+        ax.axes.get_xaxis().set_visible(False)
+        ax.axes.get_yaxis().set_visible(False)
+
+    ax.legend(numpoints=1)
+
+    return fig
+
+    # mpld3.display()
+    #plt.show()
+
+    #if save:
+    #    html = mpld3.fig_to_html(fig)
+    #    print(html)
+
+    #plt.close(fig)
+    

@@ -119,27 +119,27 @@ def tomo(action: str,
     df = df[['id', col]]
     df = df[df[col].apply(type)==str]
     
-    # Segmentation fault if > 0k.
+    # Segmentation fault if > 90k. (??)
     if col == 'title_clean':
-        df = df.sample(n=100000, random_state=config.random_state)
+        df = df.sample(n=90000, random_state=config.random_state)
 
     print('-'*80, flush=True)
     print(f'{col}', len(df), flush=True)
 
-    try:
-        # Train model.
-        model = Top2Vec(
-            documents=df[col].tolist(),
-            document_ids=df['id'].tolist(),
-            keep_documents=False,
-            ngram_vocab=use_phrases,
-            embedding_model=model_name,
-            speed=speed,
-            workers=workers
-        )
-    except:
-        # Set to None if failed.
-        model = None
+    #try:
+    # Train model.
+    model = Top2Vec(
+        documents=df[col].tolist(),
+        document_ids=df['id'].tolist(),
+        keep_documents=False,
+        ngram_vocab=use_phrases,
+        embedding_model=model_name,
+        speed=speed,
+        workers=workers
+    )
+    #except:
+    #    # Set to None if failed.
+    #    model = None
 
     finish = timer()
 
@@ -261,7 +261,7 @@ def main():
             model, _ = tomo(
                 action=args.action,
                 df=df,
-                col='title_clean',
+                col='title',
                 model_name=args.modelname,
                 use_phrases=False,
                 speed='deep-learn',
@@ -273,7 +273,7 @@ def main():
                 topic_wordss, word_scoress, topic_ids = model.get_topics(num_topics=config.num_topics, reduced=True)
                 for topic_words, word_scores, topic_id in zip(topic_ids, topic_wordss, word_scoress):
                     print(f'{topic_id} {topic_words} {word_scores}')
-                model.save('{}/tomo-singlewords-titles.t2v'.format(args.outputfolder))
+                model.save('{}/tomo-gensim-titles-singlewords.t2v'.format(args.outputfolder))
 
 
 if __name__ == '__main__':
