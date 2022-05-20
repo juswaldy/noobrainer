@@ -19,6 +19,18 @@ def app():
     header = 'Named Entity Recognition'
 
     # Page elements.
+    with st.form(key='ner_form'):
+        query = st.text_area(
+            label='',
+            height=200,
+            max_chars=1000,
+            help='Tell us what you are thinking',
+            placeholder='Enter your request/report here...')
+        submitted = st.form_submit_button(label='Submit')
+
+    if submitted:
+        st.session_state.query = query
+
     with st.sidebar:
         st.subheader(header)
     
