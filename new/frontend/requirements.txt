@@ -10,13 +10,13 @@ blinker==1.4
 blis==0.7.7
 cachetools==5.1.0
 catalogue==2.0.7
-certifi==2021.10.8
+certifi==2022.5.18.1
 cffi==1.15.0
 charset-normalizer==2.0.12
 click==8.0.4
 cycler==0.11.0
 cymem==2.0.6
-Cython==0.29.29
+Cython==0.29.30
 debugpy==1.6.0
 decorator==5.1.1
 defusedxml==0.7.1
@@ -66,7 +66,7 @@ parso==0.8.3
 pathy==0.6.1
 pexpect==4.8.0
 pickleshare==0.7.5
-Pillow==9.1.0
+Pillow==9.1.1
 preshed==3.0.6
 prometheus-client==0.14.1
 prompt-toolkit==3.0.29
@@ -85,7 +85,7 @@ pyrsistent==0.18.1
 python-dateutil==2.8.2
 pytz==2022.1
 pytz-deprecation-shim==0.1.0.post0
-pyzmq==22.3.0
+pyzmq==23.0.0
 regex==2022.4.24
 requests==2.27.1
 scikit-learn==1.0.2
@@ -103,7 +103,7 @@ spacy-loggers==1.0.2
 srsly==2.4.3
 streamlit==1.9.0
 terminado==0.15.0
-thinc==8.0.15
+thinc==8.0.16
 threadpoolctl==3.1.0
 tinycss2==1.1.1
 toml==0.10.2

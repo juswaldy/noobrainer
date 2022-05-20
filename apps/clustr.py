@@ -11,7 +11,7 @@ import sys
 sys.path.append('../')
 from models.schemas import *
 from utils.clustr import *
-from datetime import datetime
+from datetime import datetime, timedelta
 from glob import glob
 
 class setVars:
@@ -20,11 +20,6 @@ class setVars:
         self.rand_state = 42
         self.label = 'section_clean'
         self.feature = 'title_clean'
-        self.year = '2020'
-        self.time_period = 'month'
-        self.times = 1
-        self.day = 1
-        self.filepath = 'C:/Users/gemin/4B_Cap_data'
 
 def app():
     """ Hierarchical Clustering app """
@@ -35,62 +30,72 @@ def app():
     # Page settings.
     header = 'Hierarchical Clustering'
 
+    # Load corpus.
+    corpus = pd.read_csv('data/health_tech_time.csv', low_memory=False).reset_index(drop=True).fillna('none')
+
+    # Show samples from corpus.
+    st.write('Samples from the corpus:')
+    cols = [ 'section_clean', 'title_clean', 'article_clean', 'date', 'num_words_per_article' ]
+    st.dataframe(corpus[cols].sample(3).reset_index(drop=True), height=500)
+
     # Page elements.
     with st.sidebar:
         st.subheader(header)
         
-        st.session_state.clustr_model = st.selectbox('Choose a Model', glob('models/clustr-*'))
+        st.session_state.clustr_model = st.selectbox('Choose a Corpus', glob('data/clustr-*'))
 
-        # Get range and start date.
-        st.slider('Select starting date')
+        with st.form(key='clustr_plot1_form'):
+            # Get range and start date.
+            start_date = st.date_input('Select starting date', datetime(2016, 1, 1))
+            num_days = st.slider('Number of days', 1, 31, 31)
+            end_date = start_date + timedelta(days=num_days)
+            plot1_submitted = st.form_submit_button(label='Submit')
 
-        # Get user specified threshold for number of ??.
-        threshold = st.slider('Select number of ??', 40, 200, 5)
+        with st.form(key='clustr_plot2_form'):
+            # Get distance threshold from user.
+            distance_threshold = st.slider('Select distance threshold', 40, 200, 80)
+            plot2_submitted = st.form_submit_button(label='Submit')
 
-    start_date, end_date = st.slider(
-        "Select date range:",
-        min_value=datetime(2016, 1, 1),
-        max_value=datetime(2020, 12, 31),
-        value=(datetime(2016, 1, 1), datetime(2016, 1, 31)))
-    start_date, end_date = start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')
-    st.write("You're scheduled for:", start_date, end_date)
-
-    # Load corpus.
-    import time
-    start = time.time()
-    corpus = pd.read_csv('data/health_tech_time.csv', low_memory=False).reset_index(drop=True).fillna('none')
-    end = time.time()
-    st.write((end - start))
+        with st.form(key='clustr_plot3_form'):
+            _n_clusters = int(st.text_input('Number of clusters (min 2)', '2'))
+            plot3_submitted = st.form_submit_button(label='Submit')
 
     # Get keywords from the user.
     keywords = st.text_input('Enter keywords separated by commas:')
     subset_cat = keywords.replace(' ', '').split(',')
     cols = ['id', 'date', 'year', 'month', 'day', 'section_clean', 'title_clean', 'article_clean']
 
-    start = time.time()
-    cos_sim, tfidf_matrix, _labels, _raw_text = get_tfidf(corpus, subset_cat, cols, setvar.label, setvar.feature, start_date, end_date)
-    end = time.time()
-    st.write((end - start))
+    # PIL.Image.frombytes('RGB', 
+    #fig.canvas.get_width_height(),fig.canvas.tostring_rgb())
 
-    ### Plot dendrograms and distances among clusters
-    fig, Z = plot_dendrogram(cos_sim, _labels, zoom_in=False)
-    st.pyplot(fig)
+    # Draw the selected plots.
+    if plot1_submitted:
+        cos_sim, tfidf_matrix, _labels, _raw_text = get_tfidf(corpus, subset_cat, cols, setvar.label, setvar.feature, str(start_date), str(end_date))
 
-    fig, _ = plot_dendrogram(cos_sim, _labels, zoom_xlim=4500)
-    st.pyplot(fig)
+        # Plot dendrograms and distances among clusters.
+        fig, Z = plot_dendrogram(cos_sim, _labels, zoom_in=False)
+        st.pyplot(fig)
 
-    fig = plot_distance(Z, 25)
-    st.pyplot(fig)
-    
-    fig, _ = plot_dendrogram(cos_sim, _labels, threshold=threshold, zoom_xlim=4500)
-    st.pyplot(fig)
+        fig, _ = plot_dendrogram(cos_sim, _labels, zoom_xlim=4500)
+        st.pyplot(fig)
 
-    ### Visualize the select clusters
-    _n_clusters = 4
-    clusters = clustering(tfidf_matrix, _n_clusters)
-    xs, ys = reduce_dim(cos_sim, setvar.rand_state)
+        with st.expander('See details', expanded=False):
+            fig = plot_distance(Z, 25)
+            st.pyplot(fig)
 
-    df = pd.DataFrame(dict(x=xs, y=ys, segment=clusters, label=_labels, text=_raw_text.values))
-    
-    fig = plot_clusters(df)
-    st.pyplot(fig)
+        # Visualize distance threshold.
+        fig, _ = plot_dendrogram(cos_sim, _labels, threshold=distance_threshold, zoom_xlim=4500)
+        st.pyplot(fig)
+
+        clusters = clustering(tfidf_matrix, _n_clusters)
+        xs, ys = reduce_dim(cos_sim, setvar.rand_state)
+
+        df = pd.DataFrame(dict(x=xs, y=ys, segment=clusters, label=_labels, text=_raw_text.values), index=None)
+
+        fig = plot_clusters(df)
+        st.pyplot(fig)
+
+        with st.expander('See details', expanded=False):
+            st.dataframe(df)
+            segments = pd.DataFrame(df.segment.value_counts(), index=None)
+            st.dataframe(segments)
