@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, BaseSettings
 from typing import List
 from utils import ner, clustr, tomo
-from models.schemas import ModelRefresh, PredictionRequest, Document, DocumentSearch, NumTopics, TopicSizes, Topic, TopicResult, KeywordSearch, KeywordSearchDocument, KeywordSearchTopic, KeywordSearchWord, WordResult
+from models.schemas import PredictionRequest, Document, DocumentSearch, NumTopics, TopicSizes, Topic, TopicResult, KeywordSearch, KeywordSearchDocument, KeywordSearchTopic, KeywordSearchWord, WordResult
 
 ################################################################################
 # Prepare configs/settings and load models.
@@ -25,13 +25,13 @@ class Settings(BaseSettings):
     api_description: str = 'API for GLG Capstone by {bryantaekim, dslee47, juswaldy} @ gmail.com'
     
     # NER.
-    ner_model_path: str
+    ner_model_path: str = 'models/ner-person-org-location.pkl'
 
     # Clustering.
-    clustr_model_path: str
+    clustr_model_path: str = 'models/clustr-health_tech-2020-01.pkl'
     
     # Topic Modeling.
-    tomo_model_path: str
+    tomo_model_path: str = 'models/tomo-titles-single-17.pkl'
     num_topics: int = 10
     topics_reduced: bool = False
     top2vec: object = None
