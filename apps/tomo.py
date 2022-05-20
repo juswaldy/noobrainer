@@ -41,19 +41,18 @@ def display_topic_wordcloud(img, cols, numcols, n, topic_score):
 
 def show_topic_detail(topic_num, container):
     """ Show topic details on the container """
-    # Highlight the selected topic.
     applystyle_button(topic_num, 40)
     with container:
         st.write('# Topic #{}'.format(topic_num))
 
 
-def display_topic_wordcloud_clickable(img, cols, numcols, n, topic_score, topic_num, container):
+def display_topic_wordcloud_clickable(img, cols, numcols, n, topic, container):
     """ Display clickable topic wordcloud """
     with cols[n].container():
-        cols[n].button('Topic #{} ({:.1%})'.format(topic_num, topic_score),
-            key=topic_num,
+        cols[n].button('Topic #{} ({:.1%})'.format(topic['topic_num'], topic['topic_score']),
+            key=topic['topic_num'],
             on_click=show_topic_detail,
-            kwargs={'topic_num': topic_num, 'container': container})
+            kwargs={'topic_num': topic['topic_num'], 'container': container})
         cols[n].image(img, use_column_width=True)
     n += 1
     if n >= numcols:
@@ -102,7 +101,7 @@ def app():
     header = 'Topic Modeling'
 
     # Page main area.
-    with st.form(key='main_form'):
+    with st.form(key='tomo_form'):
         query = st.text_area(
             label='',
             height=200,
@@ -144,12 +143,12 @@ def app():
         # If query/num_topics/reduced hasn't changed, use the stored response.
         numcols = 5
         cols = st.columns(numcols)
-        if submitted or ((st.session_state.query == query) and (st.session_state.num_topics == num_topics) and (st.session_state.topics_reduced == topics_reduced)):
+        if not (submitted or ((st.session_state.query == query) and (st.session_state.num_topics == num_topics) and (st.session_state.topics_reduced == topics_reduced))):
 
             # If parameters haven't changed, show the previous wordclouds.
             n = 0
-            for (topic_num, topic_score, img) in st.session_state.tomo_wordclouds:
-                n = display_topic_wordcloud_clickable(img, cols, numcols, n, topic_score, topic_num, result_container)
+            #for (topic, img) in st.session_state.tomo_wordclouds:
+            #    n = display_topic_wordcloud_clickable(img, cols, numcols, n, topic, result_container)
 
         else:
             del st.session_state.tomo_wordclouds
@@ -167,10 +166,10 @@ def app():
                 img = WordCloud(width=320, height=240, background_color=bgcolor).generate_from_frequencies(topic_word_scores).to_image()
                 
                 # Display wordcloud.
-                n = display_topic_wordcloud_clickable(img, cols, numcols, n, r['topic_score'], r['topic_num'], result_container)
+                n = display_topic_wordcloud_clickable(img, cols, numcols, n, r, result_container)
 
                 # Save wordcloud to session state.
-                st.session_state.tomo_wordclouds.append([r['topic_num'], r['topic_score'], img])
+                st.session_state.tomo_wordclouds.append([r, img])
 
             # Save session state.
             st.session_state.last_request = request

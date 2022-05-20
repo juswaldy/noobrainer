@@ -114,7 +114,7 @@ def tomo(action: str,
 
     # If articles, apply threshold.
     if col == 'article_clean':
-        df = df.loc[df.num_words_per_article > config.article_words_threshold]
+        df = df.loc[df.num_words_article > config.article_words_threshold]
 
     # Pick only data rows that are strings.
     df = df[['id', col]]
