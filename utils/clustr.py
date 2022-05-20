@@ -21,7 +21,6 @@
 """
 
 ## Import required packages
-from tkinter import W
 import pandas as pd, numpy as np, sys, mpld3, matplotlib.pyplot as plt, seaborn as sns
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.manifold import MDS
@@ -209,26 +208,22 @@ def _tagPos(text):
 #                                                            ,'VB','VBG','VBD','VBP','VBN','VBZ'\
                                                           )])
 
-def prepCorpus(corpus, subset_cat, cols, label, feature, time_period, year):
-    sub_corpus = corpus[(corpus[label].str.contains('|'.join(subset_cat))) & (corpus['year'] == int(year))][cols]
+def prepCorpus(corpus, subset_cat, cols, label, feature, start_date, end_date):
+    sub_corpus = corpus[(corpus[label].str.contains('|'.join(subset_cat))) \
+        & ((corpus['date'].str[:10] >= start_date) \
+        & (corpus['date'].str[:10] <= end_date))][cols]
     sub_corpus.drop_duplicates(subset=[feature], inplace=True)
     sub_corpus.drop(sub_corpus[sub_corpus[feature] == 'none'].index, inplace=True)
     
     sub_corpus[feature + '_pos_tagged'] = sub_corpus[feature].apply(lambda x: _tagPos(x))
     
-    print('Category - ' + ' '.join(subset_cat).upper() + ' : ', len(sub_corpus))
-    print('Subcorpus Dim :', sub_corpus.shape)
-    print('Counts by ' + time_period + ' for year ' + year)
-    print(sub_corpus.groupby(time_period)[label].count())
-    print(sub_corpus.head(5))
-
     return sub_corpus
 
-def get_tfidf(corpus, subset_cat, cols, label, feature, datefrom, dateto):
-    sub_corpus = prepCorpus(corpus, subset_cat, cols, label, feature, time_period, year)
+def get_tfidf(corpus, subset_cat, cols, label, feature, start_date, end_date):
+    sub_corpus = prepCorpus(corpus, subset_cat, cols, label, feature, start_date, end_date)
 
-    _raw_text = sub_corpus[sub_corpus[time_period].isin([times])][feature]
-    _labels = sub_corpus[sub_corpus[time_period].isin([times])][label].values
+    _raw_text = sub_corpus[feature]
+    _labels = sub_corpus[label].values
 
     # Calculate similiarity and transform the corpus into a tf-idf matrix
     cos_sim, tfidf_matrix = _tfidf_vectorizer(_raw_text, max_df=.5, min_df=.025)
@@ -316,14 +311,13 @@ def plot_clusters(df_2d, save=False):
 
     ax.legend(numpoints=1)
 
-    return fig
-
     # mpld3.display()
     #plt.show()
 
-    #if save:
-    #    html = mpld3.fig_to_html(fig)
-    #    print(html)
+    if save:
+        html = mpld3.fig_to_html(fig)
+        print(html)
 
     #plt.close(fig)
     
+    return fig

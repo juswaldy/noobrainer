@@ -50,6 +50,7 @@ def parse_args() -> argparse.Namespace:
 	parser.add_argument('--testfile', type=str, default='./data/health_tech_time_test.csv', help='Path to the test file', required=False)
 	parser.add_argument('--wholeshebang', action='store_true', help='Do the whole-shebang for the specified model?', required=False)
 	parser.add_argument('--outputfolder', type=str, default='./models', help='Output folder', required=False)
+	parser.add_argument('--outputfile', type=str, default='z.pkl', help='Output filename', required=False)
 	return check_args(parser.parse_args())
 
 def check_args(args: argparse.Namespace) -> argparse.Namespace:
@@ -184,7 +185,7 @@ def tomo_wholeshebang(args: argparse.Namespace) -> Tuple[DataFrame, float]:
                 result_rows = []
 
                 # Name the model file and print it.
-                model_file = f'{args.outputfolder}/{model_size}-{col_name}-{phrasing}.t2v'
+                model_file = f'{args.outputfolder}/{args.fn}-{col_name}-{phrasing}-{model_name}.t2v'
                 print('-'*80)
                 print(model_file)
 
@@ -236,7 +237,7 @@ def tomo_wholeshebang(args: argparse.Namespace) -> Tuple[DataFrame, float]:
                                     result_rows.append([model_size, col_name, phrasing, f'{period}-{x}', topic_id, topic_words, word_scores])
 
                     # Save the result rows to csv file.
-                    result_file = f'{args.outputfolder}/{model_size}-{col_name}-{phrasing}.csv'
+                    result_file = f'data/{args.fn}-{col_name}-{phrasing}-{model_name}.csv'
                     result_df = DataFrame(result_rows, columns=['model_size', 'col_name', 'phrasing', 'period', 'topic_id', 'topic_words', 'word_scores'])
                     result_df.to_csv(result_file, index=False)
 
@@ -261,7 +262,7 @@ def main():
             model, _ = tomo(
                 action=args.action,
                 df=df,
-                col='title',
+                col='article_clean',
                 model_name=args.modelname,
                 use_phrases=False,
                 speed='deep-learn',
@@ -273,7 +274,7 @@ def main():
                 topic_wordss, word_scoress, topic_ids = model.get_topics(num_topics=config.num_topics, reduced=True)
                 for topic_words, word_scores, topic_id in zip(topic_ids, topic_wordss, word_scoress):
                     print(f'{topic_id} {topic_words} {word_scores}')
-                model.save('{}/tomo-gensim-titles-singlewords.t2v'.format(args.outputfolder))
+                model.save('{}/{}'.format(args.outputfolder, args.outputfile))
 
 
 if __name__ == '__main__':

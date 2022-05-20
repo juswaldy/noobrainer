@@ -20,18 +20,18 @@ from models.schemas import ModelRefresh, PredictionRequest, Document, DocumentSe
 # Prepare configs/settings and load models.
 
 class Settings(BaseSettings):
-    api_version: str = '2.0'
+    api_version: str = '3.0'
     api_title: str = 'noobrainer API'
     api_description: str = 'API for GLG Capstone by {bryantaekim, dslee47, juswaldy} @ gmail.com'
     
     # NER.
-    ner_model_path: str = 'models/ner_model.pkl'
+    ner_model_path: str
 
     # Clustering.
-    clustr_model_path: str = 'models/clustr_model.pkl'
+    clustr_model_path: str
     
     # Topic Modeling.
-    tomo_model_path: str = "models/tomo-articles-singlewords.t2v"
+    tomo_model_path: str
     num_topics: int = 10
     topics_reduced: bool = False
     top2vec: object = None

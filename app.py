@@ -33,7 +33,9 @@ session_objects = {
     'topics_reduced': False,
     'last_request': '',
     'tomo_wordclouds': [],
-    'tomo_model_path': 'models/tomo-singlewords-articles.t2v'
+    'tomo_model': 'models/tomo-titles-single-17.t2v',
+    'clustr_model': 'models/clustr-titles-single-17.t2v',
+    'ner_model': 'models/ner-articles-5k-17.t2v'
 }
 for obj, val in session_objects.items():
     if obj not in st.session_state:

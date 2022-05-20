@@ -11,6 +11,8 @@ import sys
 sys.path.append('../')
 from models.schemas import *
 from utils.clustr import *
+from datetime import datetime
+from glob import glob
 
 class setVars:
     # Setting seed, label, feature, year, time period
@@ -37,14 +39,21 @@ def app():
     with st.sidebar:
         st.subheader(header)
         
-        # Get date from user.
-        d = st.date_input('Select date')
-        setvar.year = str(d.year)
-        setvar.times = d.month
-        setvar.day = d.day
+        st.session_state.clustr_model = st.selectbox('Choose a Model', glob('models/clustr-*'))
+
+        # Get range and start date.
+        st.slider('Select starting date')
 
         # Get user specified threshold for number of ??.
         threshold = st.slider('Select number of ??', 40, 200, 5)
+
+    start_date, end_date = st.slider(
+        "Select date range:",
+        min_value=datetime(2016, 1, 1),
+        max_value=datetime(2020, 12, 31),
+        value=(datetime(2016, 1, 1), datetime(2016, 1, 31)))
+    start_date, end_date = start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')
+    st.write("You're scheduled for:", start_date, end_date)
 
     # Load corpus.
     import time
@@ -59,7 +68,7 @@ def app():
     cols = ['id', 'date', 'year', 'month', 'day', 'section_clean', 'title_clean', 'article_clean']
 
     start = time.time()
-    cos_sim, tfidf_matrix, _labels, _raw_text = get_tfidf(corpus, subset_cat, cols, setvar.label, setvar.feature, setvar.year, setvar.times, setvar.day)
+    cos_sim, tfidf_matrix, _labels, _raw_text = get_tfidf(corpus, subset_cat, cols, setvar.label, setvar.feature, start_date, end_date)
     end = time.time()
     st.write((end - start))
 
@@ -83,4 +92,5 @@ def app():
 
     df = pd.DataFrame(dict(x=xs, y=ys, segment=clusters, label=_labels, text=_raw_text.values))
     
-    plot_clusters(df)
+    fig = plot_clusters(df)
+    st.pyplot(fig)
