@@ -9,12 +9,13 @@
     def augment_with_time_columns()
 """
 
+import os
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, BaseSettings
 from typing import List
 from utils import ner, clustr, tomo
-from models.schemas import PredictionRequest, Document, DocumentSearch, NumTopics, TopicSizes, Topic, TopicResult, KeywordSearch, KeywordSearchDocument, KeywordSearchTopic, KeywordSearchWord, WordResult
+from models.schemas import ModelRefresh, PredictionRequest, Document, DocumentSearch, NumTopics, TopicSizes, Topic, TopicResult, KeywordSearch, KeywordSearchDocument, KeywordSearchTopic, KeywordSearchWord, WordResult
 
 ################################################################################
 # Prepare configs/settings and load models.
@@ -25,13 +26,13 @@ class Settings(BaseSettings):
     api_description: str = 'API for GLG Capstone by {bryantaekim, dslee47, juswaldy} @ gmail.com'
     
     # NER.
-    ner_model_path: str = 'models/ner-person-org-location.pkl'
+    ner_model_path: str = 'models/ner-healthtechother-titles-21.pkl'
 
     # Clustering.
     clustr_model_path: str = 'models/clustr-health_tech-2020-01.pkl'
     
     # Topic Modeling.
-    tomo_model_path: str = 'models/tomo-titles-single-17.pkl'
+    tomo_model_path: str = 'models/tomo-articles-single-17.pkl'
     num_topics: int = 10
     topics_reduced: bool = False
     top2vec: object = None
@@ -93,6 +94,19 @@ def _clustr():
     tags=["Topic Modeling"])
 def _tomo():
     return "Friendly tomo!"
+
+@app.post("/tomo/model/refresh",
+    response_model=ModelRefresh,
+    description="Refresh Topic Modeling with a new model file",
+    tags=["Topic Modeling"])
+async def tomo_refresh(request: ModelRefresh):
+    if os.path.isfile(request.model_path):
+        settings.top2vec = tomo.load(request.model_path)
+        settings.tomo_model_path = request.model_path
+        model_path = request.model_path if settings.top2vec else f'Model {request.model_path} not found!'
+    else:
+        model_path = f'Model {request.model_path} not found!'
+    return ModelRefresh(client_id=request.client_id, model_path=model_path)
 
 @app.get("/tomo/topics/number",
     response_model=NumTopics,

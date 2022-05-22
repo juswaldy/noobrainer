@@ -33,9 +33,15 @@ session_objects = {
     'topics_reduced': False,
     'last_request': '',
     'tomo_wordclouds': [],
-    'tomo_model': 'models/tomo-titles-single-17.t2v',
-    'clustr_model': 'models/clustr-titles-single-17.t2v',
-    'ner_model': 'models/ner-articles-5k-17.t2v'
+    'tomo_model': 'models/tomo-all-87k-articles-single-21.pkl',
+    'clustr_model': 'models/clustr-titles-single-17.pkl',
+    'ner_model': 'models/ner-healthtechother-articles-21.pkl',
+    'clustr_plot1': None,
+    'clustr_plot2': None,
+    'clustr_plot3': None,
+    'clustr_plot4': None,
+    'clustr_plot5': None,
+    'clustr_df': {}
 }
 for obj, val in session_objects.items():
     if obj not in st.session_state:
@@ -45,7 +51,6 @@ for obj, val in session_objects.items():
 # Main app.
 
 app = MultiApp()
-app.add_app("Named Entity Recognition", ner.app)
-app.add_app("Hierarchical Clustering", clustr.app)
 app.add_app("Topic Modeling", tomo.app)
+app.add_app("Hierarchical Clustering", clustr.app)
 app.run()

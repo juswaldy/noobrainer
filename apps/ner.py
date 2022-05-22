@@ -20,12 +20,9 @@ def app():
 
     # Page elements.
     with st.form(key='ner_form'):
-        query = st.text_area(
-            label='',
-            height=200,
-            max_chars=1000,
-            help='Tell us what you are thinking',
-            placeholder='Enter your request/report here...')
+        # Get keywords from the user.
+        keywords = st.text_input('Enter keywords separated by commas:')
+        subset_cat = keywords.replace(' ', '').split(',')
         submitted = st.form_submit_button(label='Submit')
 
     if submitted:

@@ -13,13 +13,22 @@ from models.schemas import *
 from utils.clustr import *
 from datetime import datetime, timedelta
 from glob import glob
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from PIL import Image
+import io
 
 class setVars:
-    # Setting seed, label, feature, year, time period
+    # Setting seed, label, feature
     def __init__(self, **kwargs):
         self.rand_state = 42
         self.label = 'section_clean'
         self.feature = 'title_clean'
+
+def fig2img(figure):
+    img_buf = io.BytesIO()
+    figure.savefig(img_buf, format='png')
+    im = Image.open(img_buf)
+    return im
 
 def app():
     """ Hierarchical Clustering app """
@@ -42,60 +51,97 @@ def app():
     with st.sidebar:
         st.subheader(header)
         
-        st.session_state.clustr_model = st.selectbox('Choose a Corpus', glob('data/clustr-*'))
-
         with st.form(key='clustr_plot1_form'):
+            st.write('**Step 1. Select a date range and submit**')
             # Get range and start date.
-            start_date = st.date_input('Select starting date', datetime(2016, 1, 1))
+            start_date = st.date_input('Starting date', datetime(2016, 1, 1))
             num_days = st.slider('Number of days', 1, 31, 31)
             end_date = start_date + timedelta(days=num_days)
             plot1_submitted = st.form_submit_button(label='Submit')
 
         with st.form(key='clustr_plot2_form'):
+            st.write('**Step 2. Determine where to separate the clusters**')
             # Get distance threshold from user.
-            distance_threshold = st.slider('Select distance threshold', 40, 200, 80)
+            distance_threshold = st.text_input('Distance threshold (0-1000)', '')
+            distance_threshold = int(distance_threshold) if distance_threshold.isdigit() else 0
             plot2_submitted = st.form_submit_button(label='Submit')
 
         with st.form(key='clustr_plot3_form'):
+            st.write('**Step 3. Enter the number clusters seen from Step 2**')
             _n_clusters = int(st.text_input('Number of clusters (min 2)', '2'))
             plot3_submitted = st.form_submit_button(label='Submit')
 
     # Get keywords from the user.
-    keywords = st.text_input('Enter keywords separated by commas:')
-    subset_cat = keywords.replace(' ', '').split(',')
+    #keywords = st.text_input('Enter keywords separated by commas:')
+    #subset_cat = keywords.replace(' ', '').split(',')
+    subset_cat = []
     cols = ['id', 'date', 'year', 'month', 'day', 'section_clean', 'title_clean', 'article_clean']
-
-    # PIL.Image.frombytes('RGB', 
-    #fig.canvas.get_width_height(),fig.canvas.tostring_rgb())
 
     # Draw the selected plots.
     if plot1_submitted:
         cos_sim, tfidf_matrix, _labels, _raw_text = get_tfidf(corpus, subset_cat, cols, setvar.label, setvar.feature, str(start_date), str(end_date))
 
-        # Plot dendrograms and distances among clusters.
         fig, Z = plot_dendrogram(cos_sim, _labels, zoom_in=False)
         st.pyplot(fig)
+        image = fig2img(fig)
+        st.session_state.clustr_plot1 = image
 
         fig, _ = plot_dendrogram(cos_sim, _labels, zoom_xlim=4500)
         st.pyplot(fig)
+        image = fig2img(fig)
+        st.session_state.clustr_plot2 = image
 
         with st.expander('See details', expanded=False):
             fig = plot_distance(Z, 25)
             st.pyplot(fig)
+            image = fig2img(fig)
+            st.session_state.clustr_plot3 = image
+        
+        st.session_state.cos_sim = cos_sim
+        st.session_state.tfidf_matrix = tfidf_matrix
+        st.session_state.labels = _labels
+        st.session_state.raw_text = _raw_text
+    else:
+        # If plots exist, display them.
+        if st.session_state.clustr_plot1 is not None:
+            st.image(st.session_state.clustr_plot1)
+            st.image(st.session_state.clustr_plot2)
+            with st.expander('See details', expanded=False):
+                st.image(st.session_state.clustr_plot3)
 
+    if plot2_submitted:
         # Visualize distance threshold.
-        fig, _ = plot_dendrogram(cos_sim, _labels, threshold=distance_threshold, zoom_xlim=4500)
+        fig, _ = plot_dendrogram(st.session_state.cos_sim, st.session_state.labels, threshold=distance_threshold, zoom_xlim=4500)
         st.pyplot(fig)
+        image = fig2img(fig)
+        st.session_state.clustr_plot4 = image
+    else:
+        # If plots exist, display them.
+        if st.session_state.clustr_plot4 is not None:
+            st.image(st.session_state.clustr_plot4)
 
-        clusters = clustering(tfidf_matrix, _n_clusters)
-        xs, ys = reduce_dim(cos_sim, setvar.rand_state)
+    if plot3_submitted:
+        clusters = clustering(st.session_state.tfidf_matrix, _n_clusters)
+        xs, ys = reduce_dim(st.session_state.cos_sim, setvar.rand_state)
 
-        df = pd.DataFrame(dict(x=xs, y=ys, segment=clusters, label=_labels, text=_raw_text.values), index=None)
+        df = pd.DataFrame(dict(x=xs, y=ys, segment=clusters, label=st.session_state.labels, text=st.session_state.raw_text.values), index=None)
+        st.session_state.clustr_df = df.to_dict()
 
         fig = plot_clusters(df)
         st.pyplot(fig)
+        image = fig2img(fig)
+        st.session_state.clustr_plot5 = image
 
         with st.expander('See details', expanded=False):
             st.dataframe(df)
             segments = pd.DataFrame(df.segment.value_counts(), index=None)
             st.dataframe(segments)
+    else:
+        # If plots exist, display them.
+        if st.session_state.clustr_plot5 is not None:
+            st.image(st.session_state.clustr_plot5)
+            with st.expander('See details', expanded=False):
+                df = pd.DataFrame(st.session_state.clustr_df, index=None)
+                st.dataframe(df)
+                segments = pd.DataFrame(df.segment.value_counts(), index=None)
+                st.dataframe(segments)

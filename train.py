@@ -120,9 +120,9 @@ def tomo(action: str,
     df = df[['id', col]]
     df = df[df[col].apply(type)==str]
     
-    # Segmentation fault if > 90k. (??)
-    if col == 'title_clean':
-        df = df.sample(n=90000, random_state=config.random_state)
+    ## Segmentation fault if > 90k. (??)
+    #if col == 'title_clean':
+    #    df = df.sample(n=90000, random_state=config.random_state)
 
     print('-'*80, flush=True)
     print(f'{col}', len(df), flush=True)

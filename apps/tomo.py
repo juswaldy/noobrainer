@@ -15,6 +15,10 @@ from models.schemas import *
 from wordcloud import WordCloud
 from scipy.special import softmax
 import random
+import pandas as pd
+import uuid
+
+api_url = 'http://localhost:8000'
 
 wordcloud_backgrounds = [
     'ivory',
@@ -29,6 +33,53 @@ wordcloud_backgrounds = [
     'ghostwhite'
 ]
 
+model_about_fields = [
+    'Source',
+    'URL',
+    'Preprocessing',
+    'Training filename',
+    'Training column',
+    'Filter',
+    'Number of rows',
+    'Random state',
+    'Using ngrams'
+]
+model_about_values = {
+    'models/tomo-all-87k-articles-single-21.pkl': [
+        'News 2.7M',
+        'https://components.one/datasets/all-the-news-2-news-articles-dataset/',
+        'gensim.simple_preprocessing',
+        'news2.7m-gensim-articles.csv',
+        'article_clean',
+        'None',
+        '87,693',
+        '52',
+        'No'
+    ],
+    'models/tomo-articles-single-17.pkl': [
+        'News 2.7M',
+        'https://components.one/datasets/all-the-news-2-news-articles-dataset/',
+        'Bryan Kim\'s preprocessor',
+        'health_tech.csv',
+        'article_clean',
+        'None',
+        '129,682',
+        '42',
+        'No'
+    ],
+    'models/tomo-titles-single-17.pkl': [
+        'News 2.7M',
+        'https://components.one/datasets/all-the-news-2-news-articles-dataset/',
+        'Bryan Kim\'s preprocessor',
+        'health_tech.csv',
+        'article_clean',
+        'None',
+        '129,682',
+        '42',
+        'No'
+    ]
+}
+
 def display_topic_wordcloud(img, cols, numcols, n, topic_score):
     """ Display topic wordcloud """
     with cols[n].container():
@@ -39,12 +90,12 @@ def display_topic_wordcloud(img, cols, numcols, n, topic_score):
         n = 0
     return n
 
-def show_topic_detail(topic_num, container):
+def show_topic_detail(topic, container):
     """ Show topic details on the container """
-    applystyle_button(topic_num, 40)
+    num, score, words, word_scores = topic['topic_num'], topic['topic_score'], topic['topic_words'], topic['word_scores']
+    applystyle_button(topic['topic_num'], 40)
     with container:
-        st.write('# Topic #{}'.format(topic_num))
-
+        st.header('Topic #{}'.format(num))
 
 def display_topic_wordcloud_clickable(img, cols, numcols, n, topic, container):
     """ Display clickable topic wordcloud """
@@ -52,7 +103,7 @@ def display_topic_wordcloud_clickable(img, cols, numcols, n, topic, container):
         cols[n].button('Topic #{} ({:.1%})'.format(topic['topic_num'], topic['topic_score']),
             key=topic['topic_num'],
             on_click=show_topic_detail,
-            kwargs={'topic_num': topic['topic_num'], 'container': container})
+            kwargs={'topic': topic, 'container': container})
         cols[n].image(img, use_column_width=True)
     n += 1
     if n >= numcols:
@@ -100,6 +151,40 @@ def app():
     # Page settings.
     header = 'Topic Modeling'
 
+    # Page side bar.
+    with st.sidebar:
+        st.subheader(header)
+        tomo_model = st.selectbox('Choose a Model', sorted(glob('models/tomo-*')))
+        num_topics = st.session_state.num_topics = st.slider('Number of topics', min_value=1, max_value=40, value=10)
+        topics_reduced = st.session_state.topics_reduced = st.checkbox('Topics reduced', value=False)
+        numwords_per_topic = st.slider('Number of words per topic', min_value=5, max_value=50, value=20)
+
+    # If a different model is selected, request a model refresh.
+    if st.session_state.tomo_model != tomo_model:
+        request = json.dumps(ModelRefresh(
+            client_id=str(uuid.uuid4()),
+            model_path=tomo_model
+        ).__dict__)
+        response = requests.post(f'{api_url}/tomo/model/refresh', data=request)
+        st.session_state.tomo_model = tomo_model
+        st.session_state.query = ''
+
+    # Show summary of the selected model.
+    with st.expander(f'About this model ({st.session_state.tomo_model})', expanded=False):
+        st.dataframe(pd.DataFrame(model_about_values[st.session_state.tomo_model], columns=['Value'], index=model_about_fields))
+        #for field, value in zip(model_about_fields, model_about_values[st.session_state.tomo_model]):
+        #    st.write(f'{field}: {value}')
+
+    # Number of rows in corpus.
+    # Topics discovered.
+    # Topic reduction.
+    # Topic words
+
+    # Title or article.
+    # Number of articles in corpus.
+
+    # Show top n topic wordclouds.
+
     # Page main area.
     with st.form(key='tomo_form'):
         query = st.text_area(
@@ -112,14 +197,6 @@ def app():
 
     if submitted:
         st.session_state.query = query
-
-    # Page side bar.
-    with st.sidebar:
-        st.subheader(header)
-        st.session_state.tomo_model_path = st.selectbox('Choose a Model', glob('models/tomo-*'))
-        num_topics = st.session_state.num_topics = st.slider('Number of topics', min_value=1, max_value=40, value=10)
-        topics_reduced = st.session_state.topics_reduced = st.checkbox('Topics reduced', value=False)
-        numwords_per_topic = st.slider('Number of words per topic', min_value=5, max_value=50, value=20)
 
     # Prepare topic query request from the current input fields.
     request = json.dumps(PredictionRequest(
@@ -147,15 +224,15 @@ def app():
 
             # If parameters haven't changed, show the previous wordclouds.
             n = 0
-            #for (topic, img) in st.session_state.tomo_wordclouds:
-            #    n = display_topic_wordcloud_clickable(img, cols, numcols, n, topic, result_container)
+            for (topic, img) in st.session_state.tomo_wordclouds:
+                n = display_topic_wordcloud_clickable(img, cols, numcols, n, topic, result_container)
 
         else:
             del st.session_state.tomo_wordclouds
             st.session_state.tomo_wordclouds = []
 
             # Send request to the server and get the response.
-            response = requests.post('http://localhost:8000/tomo/topics/query', data=request)
+            response = requests.post(f'{api_url}/tomo/topics/query', data=request)
 
             # Show response as wordclouds.
             n = 0

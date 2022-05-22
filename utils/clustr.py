@@ -43,7 +43,7 @@ def reduce_dim(cos_sim, random_state):
 def clustering(tfidf_matrix, _n_clusters):
     cluster = AgglomerativeClustering(n_clusters=_n_clusters, affinity='euclidean', linkage='ward')
     cluster.fit_predict(tfidf_matrix.toarray())
-    return cluster.labels_
+    return (cluster.labels_ + 1)
 
 def _plot_distance(Z, _top):
     idx = np.argsort(Z[:,-1])
