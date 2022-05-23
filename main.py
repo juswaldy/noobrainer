@@ -15,7 +15,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, BaseSettings
 from typing import List
 from utils import ner, clustr, tomo
-from models.schemas import ModelRefresh, PredictionRequest, Document, DocumentSearch, NumTopics, TopicSizes, Topic, TopicResult, KeywordSearch, KeywordSearchDocument, KeywordSearchTopic, KeywordSearchWord, WordResult
+from models.schemas import ModelRefresh, Classification, PredictionRequest, Document, DocumentSearch, NumTopics, TopicSizes, Topic, TopicResult, KeywordSearch, KeywordSearchDocument, KeywordSearchTopic, KeywordSearchWord, WordResult
 
 ################################################################################
 # Prepare configs/settings and load models.
@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     clustr_model_path: str = 'models/clustr-health_tech-2020-01.pkl'
     
     # Topic Modeling.
-    tomo_model_path: str = 'models/tomo-articles-single-17.pkl'
+    tomo_model_path: str = 'models/tomo-healthtech-articles-single-17.pkl'
     num_topics: int = 10
     topics_reduced: bool = False
     top2vec: object = None
@@ -76,6 +76,13 @@ def health():
     tags=["Named Entity Recognition"])
 def _ner():
     return "Almost there!"
+
+@app.post("/ner/classify",
+    response_model=Classification,
+    description="Classification request for a query string",
+    tags=["Named Entity Recognition"])
+async def ner_refresh(request: Classification):
+    return ner.classify(request.query_string)
 
 ################################################################################
 # Hierarchical Clustering endpoints.

@@ -16,11 +16,13 @@ import pandas as pd
 ################################################################################
 # Page settings.
 
+instance_url = 'localhost'
 page_icon = Image.open('favicon.ico')
 st.set_page_config(
     page_title='noobrainer',
     page_icon=page_icon,
-    layout="wide"
+    layout='wide',
+    menu_items={ 'About': 'noobrainer v0.1\n\n---\n\nAPI/backend: http://{}:8000/docs\n\n---\n\nBryan T. Kim bryantaekim at gmail dot com\n\nDaniel Lee dslee47 at gmail dot com\n\nJuswaldy Jusman juswaldy at gmail dot com\n\n---\n\n'.format(instance_url) }
 )
 
 ################################################################################
@@ -41,7 +43,8 @@ session_objects = {
     'clustr_plot3': None,
     'clustr_plot4': None,
     'clustr_plot5': None,
-    'clustr_df': {}
+    'clustr_df': {},
+    'tomo_top10': []
 }
 for obj, val in session_objects.items():
     if obj not in st.session_state:
@@ -51,6 +54,6 @@ for obj, val in session_objects.items():
 # Main app.
 
 app = MultiApp()
-app.add_app("Topic Modeling", tomo.app)
-app.add_app("Hierarchical Clustering", clustr.app)
+app.add_app("Highest Ranking Topics", tomo.app)
+app.add_app("Historical Analysis", clustr.app)
 app.run()

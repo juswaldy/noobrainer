@@ -16,6 +16,11 @@ class ModelRefresh(BaseModel):
 ################################################################################
 # NER schemas.
 
+class Classification(BaseModel):
+    query_string: str
+    class_num: int
+    class_str: str
+
 ################################################################################
 # Clustering schemas.
 
