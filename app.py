@@ -8,7 +8,7 @@
 """
 
 import streamlit as st
-from multiapp import MultiApp
+from apps.multiapp import MultiApp
 from apps import ner, clustr, tomo
 from PIL import Image
 import pandas as pd
