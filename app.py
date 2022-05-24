@@ -29,10 +29,11 @@ st.set_page_config(
 # Set up session state.
 
 session_objects = {
+    'debug': False,
     'api_url': 'http://localhost:8000',
-    'tomo_header': 'Topics Most Common',
-    'clustr_header': 'Historical Analysis',
-    'ner_header': 'Test/Update the Model',
+    'tomo_header': 'Most Common Topics in Corpus',
+    'clustr_header': 'Hierarchical Clustering over Time',
+    'ner_header': 'Test and Update the Model',
     'query': '',
     'num_topics': -1,
     'numwords_per_topic': -1,
@@ -43,15 +44,17 @@ session_objects = {
     'clustr_model': 'models/clustr-titles-single-17.pkl',
     'ner_wordclouds': [],
     'ner_model': 0,
+    'ner_labels': [ 'other', 'health', 'tech' ],
     'clustr_plot1': None,
     'clustr_plot2': None,
     'clustr_plot3': None,
     'clustr_plot4': None,
     'clustr_plot5': None,
     'clustr_df': {},
-    'clustr_filepath': '',
     'clustr_corpus': None,
-    'tomo_top10': []
+    'corpus_filepath': 'data/0_combined_set_60k_date.csv',
+    'tomo_top10': [],
+    'sme_filepath': 'data/topic_specialists_15.csv',
 }
 for obj, val in session_objects.items():
     if obj not in st.session_state:
@@ -62,6 +65,6 @@ for obj, val in session_objects.items():
 
 app = MultiApp()
 app.add_app(st.session_state.tomo_header, tomo.app)
-app.add_app(st.session_state.clustr_header, clustr.app)
 app.add_app(st.session_state.ner_header, ner.app)
+app.add_app(st.session_state.clustr_header, clustr.app)
 app.run()

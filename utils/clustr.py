@@ -43,7 +43,7 @@ def reduce_dim(cos_sim, random_state):
 def clustering(tfidf_matrix, _n_clusters):
     cluster = AgglomerativeClustering(n_clusters=_n_clusters, affinity='euclidean', linkage='ward')
     cluster.fit_predict(tfidf_matrix.toarray())
-    return (cluster.labels_ + 1)
+    return cluster.labels_
 
 def _plot_distance(Z, _top):
     idx = np.argsort(Z[:,-1])
@@ -209,7 +209,7 @@ def _tagPos(text):
                                                           )])
 
 def prepCorpus(corpus, subset_cat, cols, label, feature, start_date, end_date):
-    sub_corpus = corpus[(corpus[label].str.contains('|'.join(subset_cat))) \
+    sub_corpus = corpus[(corpus[label].astype(str).str.contains('|'.join(subset_cat))) \
         & ((corpus['date'].str[:10] >= start_date) \
         & (corpus['date'].str[:10] <= end_date))][cols]
     sub_corpus.drop_duplicates(subset=[feature], inplace=True)
@@ -250,7 +250,7 @@ def plot_dendrogram(cos_sim, target, _p=30, _trunc_mode=None, fw=15, fh=10, zoom
     if threshold > 0:
         plt.axhline(y=threshold, color='r', linestyle='--')
         
-    plt.xticks(rotation=45)
+    plt.xticks(rotation=0)
     plt.tight_layout()
     # plt.show()
     

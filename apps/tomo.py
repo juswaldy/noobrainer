@@ -46,14 +46,6 @@ def show_topic_detail(topic: object, container: object) -> None:
         df = df.groupby('word')[['score']].sum()
         df = df.sort_values(by='word')
         st.bar_chart(df)
-        st.write('')
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            st.write('# :boy:')
-            st.write('ehlo')
-        c2.write('# :girl:')
-        c3.write('# :male-farmer:')
-
 
 def display_topic_wordcloud_clickable(img, cols, numcols, n, topic, container) -> int:
     """ Display clickable topic wordcloud """
@@ -125,7 +117,11 @@ def app():
     with st.sidebar:
         st.subheader(header)
         available_models = {k: v for k, v in enumerate(model_about_values.keys())}
-        tomo_model = st.selectbox('Choose a Model', options=available_models.keys(), format_func=lambda x: available_models[x], index=st.session_state.tomo_model)
+        # If debugging, show all models.
+        if st.session_state.debug:
+            tomo_model = st.selectbox('Choose a Model', options=available_models.keys(), format_func=lambda x: available_models[x], index=st.session_state.tomo_model)
+        else:
+            tomo_model = st.session_state.tomo_model
         num_topics = st.session_state.num_topics = st.slider('Number of topics', min_value=1, max_value=40, value=10)
         topics_reduced = st.session_state.topics_reduced = st.checkbox('Topics reduced', value=False)
         numwords_per_topic = st.slider('Number of words per topic', min_value=5, max_value=50, value=20)
@@ -149,7 +145,7 @@ def app():
 
     # Page header.
     st.header(header)
-    #st.subheader(f'Number of user submitted reports: {model_about_values[available_models[st.session_state.tomo_model]][5]}')
+    st.subheader(f'# of reports: {model_about_values[available_models[st.session_state.tomo_model]][5]}')
     top10_container = st.container()
     result_container = st.expander('Results', expanded=True)
 

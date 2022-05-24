@@ -21,7 +21,7 @@ class setVars:
     # Setting seed, label, feature
     def __init__(self, **kwargs):
         self.rand_state = 42
-        self.label = 'section_clean'
+        self.label = 'label'
         self.feature = 'title_clean'
 
 def fig2img(figure):
@@ -36,19 +36,20 @@ def app():
     # Set variables.
     setvar = setVars()
 
-    # Page settings.
-    header = 'Historical Analysis'
-
-    st.header(header)
+    st.header(st.session_state.clustr_header)
 
     # Page elements.
     with st.sidebar:
-        st.subheader(header)
+        st.subheader(st.session_state.clustr_header)
         
-        clustr_filepath = st.selectbox('Choose a Corpus', sorted(glob('data/*')))
+        # If debugging, show option to choose corpus.
+        if st.session_state.debug:
+            corpus_filepath = st.selectbox('Choose a Corpus', sorted(glob('data/*')))
+        else:
+            corpus_filepath = ''
 
         with st.form(key='clustr_plot1_form'):
-            st.write('**Step 1. Select a date range and submit**')
+            st.write('**Step 1. Select a date range**')
             # Get range and start date.
             start_date = st.date_input('Starting date', datetime(2016, 1, 1))
             num_days = st.slider('Number of days', 1, 31, 31)
@@ -56,35 +57,35 @@ def app():
             plot1_submitted = st.form_submit_button(label='Submit')
 
         with st.form(key='clustr_plot2_form'):
-            st.write('**Step 2. Determine where to separate the clusters**')
+            st.write('**Step 2. Separate the clusters**')
             # Get distance threshold from user.
             distance_threshold = st.text_input('Distance threshold (0-1000)', '')
             distance_threshold = int(distance_threshold) if distance_threshold.isdigit() else 0
             plot2_submitted = st.form_submit_button(label='Submit')
 
         with st.form(key='clustr_plot3_form'):
-            st.write('**Step 3. Enter the number clusters seen from Step 2**')
+            st.write('**Step 3. Clusters from Step 2**')
             _n_clusters = int(st.text_input('Number of clusters (min 2)', '2'))
             plot3_submitted = st.form_submit_button(label='Submit')
 
     # Load corpus.
-    if st.session_state.clustr_filepath == clustr_filepath:
+    if st.session_state.corpus_filepath == corpus_filepath:
         corpus = st.session_state.clustr_corpus
     else:
-        corpus = pd.read_csv(clustr_filepath, low_memory=False).reset_index(drop=True).fillna('none')
+        corpus_filepath = st.session_state.corpus_filepath if corpus_filepath == '' else corpus_filepath
+        corpus = pd.read_csv(corpus_filepath, low_memory=False).reset_index(drop=True).fillna('none')
         st.session_state.clustr_corpus = corpus
-        st.session_state.clustr_filepath = clustr_filepath
+        st.session_state.corpus_filepath = corpus_filepath
 
     # Show samples from corpus.
     st.write('Samples from the corpus:')
-    cols = [ 'section_clean', 'title_clean', 'article_clean', 'date', 'num_words_per_article' ]
-    st.dataframe(corpus[cols].sample(4).reset_index(drop=True), height=600)
+    cols = [ 'title_clean', 'label', 'date' ]
+    samples = corpus[cols].sample(4, random_state=52).reset_index(drop=True)
+    samples.label = [ st.session_state.ner_labels[i] for i in samples.label ]
+    samples.date = samples.date.apply(lambda x: x[:10])
+    st.dataframe(samples, height=600)
 
-    # Get keywords from the user.
-    #keywords = st.text_input('Enter keywords separated by commas:')
-    #subset_cat = keywords.replace(' ', '').split(',')
     subset_cat = []
-    cols = ['id', 'date', 'year', 'month', 'day', 'section_clean', 'title_clean', 'article_clean']
 
     # Draw the selected plots.
     if plot1_submitted:
@@ -95,7 +96,7 @@ def app():
         image = fig2img(fig)
         st.session_state.clustr_plot1 = image
 
-        fig, _ = plot_dendrogram(cos_sim, _labels, zoom_xlim=4500)
+        fig, _ = plot_dendrogram(cos_sim, _labels, zoom_xlim=150*num_days)
         st.pyplot(fig)
         image = fig2img(fig)
         st.session_state.clustr_plot2 = image
@@ -108,7 +109,7 @@ def app():
         
         st.session_state.cos_sim = cos_sim
         st.session_state.tfidf_matrix = tfidf_matrix
-        st.session_state.labels = _labels
+        st.session_state.labels = [ st.session_state.ner_labels[x] for x in _labels ]
         st.session_state.raw_text = _raw_text
     else:
         # If plots exist, display them.
@@ -120,7 +121,7 @@ def app():
 
     if plot2_submitted:
         # Visualize distance threshold.
-        fig, _ = plot_dendrogram(st.session_state.cos_sim, st.session_state.labels, threshold=distance_threshold, zoom_xlim=4500)
+        fig, _ = plot_dendrogram(st.session_state.cos_sim, st.session_state.labels, threshold=distance_threshold, zoom_xlim=1500)
         st.pyplot(fig)
         image = fig2img(fig)
         st.session_state.clustr_plot4 = image
@@ -142,7 +143,7 @@ def app():
         st.session_state.clustr_plot5 = image
 
         with st.expander('See details', expanded=False):
-            st.dataframe(df)
+            st.dataframe(df, width=5000)
             segments = pd.DataFrame(df.segment.value_counts(), index=None)
             st.dataframe(segments)
     else:
@@ -151,6 +152,6 @@ def app():
             st.image(st.session_state.clustr_plot5)
             with st.expander('See details', expanded=False):
                 df = pd.DataFrame(st.session_state.clustr_df, index=None)
-                st.dataframe(df)
+                st.dataframe(df, width=5000)
                 segments = pd.DataFrame(df.segment.value_counts(), index=None)
                 st.dataframe(segments)

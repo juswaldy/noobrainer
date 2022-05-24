@@ -261,8 +261,8 @@ def get_topn(model, infile, col, n):
         if i % 200000 == 0:
             chunk += 1
             dfout = pd.DataFrame(results, columns=['id', f'top{n}', f'top{n}_scores'])
-            outfile = infile.split('.')[:-1].join('.')
-            outfile = '{}-{:02}.csv'.format(outfile, chunk)
+            basename = os.path.splitext(infile)
+            outfile = '{}-{:02}.csv'.format(basename, chunk)
             print(f'############## Saving {outfile}', flush=True)
             dfout.to_csv(outfile, index=None)
             results = []
@@ -287,7 +287,7 @@ def main():
             from top2vec import Top2Vec
 
             # Load article model.
-            model = Top2Vec.load('models/tomo-all-87k-articles-single-21.pkl')
+            model = Top2Vec.load('models/tomo-60k.pkl')
 
             # Run for every article.
             get_topn(model, 'data/news2.7m-gensim-articles.csv', 'article_clean', 3)
@@ -299,8 +299,8 @@ def main():
             df = pd.read_csv(args.trainfile)
             model, _ = tomo(
                 action=args.action,
-                df=df.sample(n=250000, random_state=52),
-                col='article_clean',
+                df=df,
+                col='title_clean',
                 model_name=args.modelname,
                 use_phrases=False,
                 speed='deep-learn',

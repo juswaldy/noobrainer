@@ -21,7 +21,7 @@ from models.schemas import ModelRefresh, Classification, PredictionRequest, Docu
 # Prepare configs/settings and load models.
 
 class Settings(BaseSettings):
-    api_version: str = '3.0'
+    api_version: str = '0.1'
     api_title: str = 'noobrainer API'
     api_description: str = 'API for GLG Capstone by {bryantaekim, dslee47, juswaldy} @ gmail.com'
     
@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     clustr_model_path: str = 'models/clustr-health_tech-2020-01.pkl'
     
     # Topic Modeling.
-    tomo_model_path: str = 'models/tomo-healthtech-articles-single-17.pkl'
+    tomo_model_path: str = 'models/tomo-60k.pkl'
     num_topics: int = 10
     topics_reduced: bool = False
     top2vec: object = None
