@@ -69,7 +69,7 @@ def app():
             plot3_submitted = st.form_submit_button(label='Submit')
 
     # Load corpus.
-    if st.session_state.corpus_filepath == corpus_filepath:
+    if st.session_state.corpus_filepath == corpus_filepath and st.session_state.clustr_corpus:
         corpus = st.session_state.clustr_corpus
     else:
         corpus_filepath = st.session_state.corpus_filepath if corpus_filepath == '' else corpus_filepath

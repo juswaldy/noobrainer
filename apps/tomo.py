@@ -5,6 +5,7 @@
           Juswaldy Jusman juswaldy at gmail dot com
 @description: Streamlit Topic Modeling app file.
 """
+from tkinter import W
 import streamlit as st
 import json
 import requests
@@ -46,6 +47,27 @@ def show_topic_detail(topic: object, container: object) -> None:
         df = df.groupby('word')[['score']].sum()
         df = df.sort_values(by='word')
         st.bar_chart(df)
+
+        # Read in topic specialists.
+        sme = pd.read_csv(st.session_state.sme_filepath)
+
+        # Get top 3 specialists.
+        sme['label'] = sme['jobtitle'].apply(lambda x: x.lower()[0])
+        top3_sme = sme[sme.label==topic_labels[num]].sample(3)
+
+        # Show topic specialists.
+        st.subheader(top3_sme.jobtitle.values[0])
+
+        cols = st.columns(3)
+        for i in range(3):
+            x = top3_sme.iloc[i]
+            c1, c2 = st.columns([1, 4])
+            with c1:
+                cols[i].write(f'# {x.emoji}')
+            with c2:
+                cols[i].write(f'{x.firstname} {x.lastname}')
+                cols[i].write(f'{x.email}')
+                cols[i].write(f'{x.phone}')
 
 def display_topic_wordcloud_clickable(img, cols, numcols, n, topic, container) -> int:
     """ Display clickable topic wordcloud """
@@ -122,13 +144,13 @@ def app():
             tomo_model = st.selectbox('Choose a Model', options=available_models.keys(), format_func=lambda x: available_models[x], index=st.session_state.tomo_model)
         else:
             tomo_model = st.session_state.tomo_model
-        num_topics = st.session_state.num_topics = st.slider('Number of topics', min_value=1, max_value=40, value=10)
-        topics_reduced = st.session_state.topics_reduced = st.checkbox('Topics reduced', value=False)
+        num_topics = st.slider('Number of topics', min_value=1, max_value=40, value=10)
+        # topics_reduced = st.session_state.topics_reduced = st.checkbox('Topics reduced', value=False)
         numwords_per_topic = st.slider('Number of words per topic', min_value=5, max_value=50, value=20)
 
     # If a different model is selected, request a model refresh.
     model_num_topics = model_about_values[available_models[tomo_model]][7]
-    if st.session_state.tomo_model != tomo_model:
+    if st.session_state.debug and st.session_state.tomo_model != tomo_model:
         request = json.dumps(ModelRefresh(
             client_id=str(uuid.uuid4()),
             model_path=available_models[tomo_model]
@@ -150,7 +172,7 @@ def app():
     result_container = st.expander('Results', expanded=True)
 
     # Show summary of the selected model.
-    with st.expander(f'About this model ({available_models[st.session_state.tomo_model]})', expanded=True):
+    with st.expander(f'About this model ({available_models[st.session_state.tomo_model]})', expanded=False):
         model_about = pd.DataFrame(model_about_values[available_models[st.session_state.tomo_model]], columns=['Value'], index=model_about_fields)
         model_about.at['Number of topics discovered', 'Value'] = model_num_topics
         st.dataframe(model_about)
@@ -160,9 +182,12 @@ def app():
         numcols = 5
         cols = st.columns(numcols)
         n = 0
-        if len(st.session_state.tomo_top10) == 0:
+        if len(st.session_state.tomo_top10) == 0 or st.session_state.num_topics != num_topics or st.session_state.numwords_per_topic != numwords_per_topic:
 
-            response = requests.get(f'{api_url}/tomo/topics/get-topics', params={'num_topics': 10})
+            del st.session_state.tomo_top10
+            st.session_state.tomo_top10 = []
+
+            response = requests.get(f'{api_url}/tomo/topics/get-topics', params={'num_topics': num_topics})
 
             # Show response as wordclouds.
             bgcolor = random.choice(wordcloud_backgrounds)
@@ -171,6 +196,9 @@ def app():
                 topic_word_scores = dict(zip(r['topic_words'][:numwords_per_topic], softmax(r['word_scores'][:numwords_per_topic])))
                 img = WordCloud(width=320, height=240, background_color=bgcolor).generate_from_frequencies(topic_word_scores).to_image()
                 
+                if st.session_state.debug:
+                    st.write(f"{r['topic_num']} - {' '.join(r['topic_words'][:20])}")
+
                 # Ensure a topic_score: either an actual float score from the server, or the index+1.
                 if 'topic_score' not in r:
                     r['topic_score'] = n + 1
@@ -178,8 +206,10 @@ def app():
                 # Display wordcloud.
                 n = display_topic_wordcloud_clickable(img, cols, numcols, n, r, result_container)
 
-                # Save wordcloud to session state.
+                # Save settings and wordclouds to session state.
                 st.session_state.tomo_top10.append([r, img])
+                st.session_state.num_topics = num_topics
+                st.session_state.numwords_per_topic = numwords_per_topic
 
         else:
             for (topic, img) in st.session_state.tomo_top10:
