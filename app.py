@@ -18,6 +18,7 @@ import pandas as pd
 
 instance_url = 'localhost'
 page_icon = Image.open('favicon.ico')
+logo = 'apps/n_6_lg.gif'
 st.set_page_config(
     page_title='noobrainer',
     page_icon=page_icon,
@@ -63,7 +64,7 @@ for obj, val in session_objects.items():
 ################################################################################
 # Main app.
 
-app = MultiApp()
+app = MultiApp(logo)
 app.add_app(st.session_state.tomo_header, tomo.app)
 app.add_app(st.session_state.ner_header, ner.app)
 app.add_app(st.session_state.clustr_header, clustr.app)

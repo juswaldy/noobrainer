@@ -23,8 +23,9 @@ class MultiApp:
         app.add_app("Bar", bar.app)
         app.run()
     """
-    def __init__(self):
+    def __init__(self, logo):
         self.apps = []
+        self.logo = logo
 
     def add_app(self, title, func):
         """Adds a new application.
@@ -45,7 +46,7 @@ class MultiApp:
         with st.sidebar:
             c1, c2 = st.columns([9, 19])
             with c1:
-                st.image('n_6_lg.gif', width=100)
+                st.image(self.logo, width=100)
             with c2:
                 st.write('')
                 st.write('<span style="font-size:40px; font-weight:bold">noobrainer</span>', unsafe_allow_html=True)
