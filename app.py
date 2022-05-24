@@ -17,7 +17,7 @@ import pandas as pd
 # Page settings.
 
 instance_url = 'localhost'
-page_icon = Image.open('favicon.ico')
+page_icon = Image.open('apps/favicon.ico')
 logo = 'apps/n_6_lg.gif'
 st.set_page_config(
     page_title='noobrainer',
