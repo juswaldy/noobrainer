@@ -20,8 +20,6 @@ import uuid
 from apps.configs import *
 import matplotlib.pyplot as plt
 
-api_url = 'http://localhost:8000'
-
 def display_topic_wordcloud(img, cols, numcols, n, topic_score):
     """ Display topic wordcloud """
     with cols[n].container():
@@ -48,6 +46,14 @@ def show_topic_detail(topic: object, container: object) -> None:
         df = df.groupby('word')[['score']].sum()
         df = df.sort_values(by='word')
         st.bar_chart(df)
+        st.write('')
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.write('# :boy:')
+            st.write('ehlo')
+        c2.write('# :girl:')
+        c3.write('# :male-farmer:')
+
 
 def display_topic_wordcloud_clickable(img, cols, numcols, n, topic, container) -> int:
     """ Display clickable topic wordcloud """
@@ -109,51 +115,57 @@ def applystyle_button(topic_num, n_buttons):
 def app():
     """ Topic Modeling app """
 
+    # Site settings.
+    api_url = st.session_state.api_url
+
     # Page settings.
-    header = 'Highest Ranking Topics'
+    header = st.session_state.tomo_header
 
     # Page side bar.
     with st.sidebar:
         st.subheader(header)
-        tomo_model = st.selectbox('Choose a Model', sorted(glob('models/tomo-*')))
+        available_models = {k: v for k, v in enumerate(model_about_values.keys())}
+        tomo_model = st.selectbox('Choose a Model', options=available_models.keys(), format_func=lambda x: available_models[x], index=st.session_state.tomo_model)
         num_topics = st.session_state.num_topics = st.slider('Number of topics', min_value=1, max_value=40, value=10)
         topics_reduced = st.session_state.topics_reduced = st.checkbox('Topics reduced', value=False)
         numwords_per_topic = st.slider('Number of words per topic', min_value=5, max_value=50, value=20)
 
     # If a different model is selected, request a model refresh.
-    model_num_topics = model_about_values[tomo_model][7]
+    model_num_topics = model_about_values[available_models[tomo_model]][7]
     if st.session_state.tomo_model != tomo_model:
         request = json.dumps(ModelRefresh(
             client_id=str(uuid.uuid4()),
-            model_path=tomo_model
+            model_path=available_models[tomo_model]
         ).__dict__)
         response = requests.post(f'{api_url}/tomo/model/refresh', data=request)
-        st.session_state.tomo_model = tomo_model
         response = requests.get(f'{api_url}/tomo/topics/number')
         model_num_topics = str(response.json()['num_topics'])
+        st.session_state.tomo_model = tomo_model
 
         # Reset query and top10.
         st.session_state.query = ''
+        del st.session_state.tomo_top10
         st.session_state.tomo_top10 = []
 
+    # Page header.
+    st.header(header)
+    #st.subheader(f'Number of user submitted reports: {model_about_values[available_models[st.session_state.tomo_model]][5]}')
+    top10_container = st.container()
+    result_container = st.expander('Results', expanded=True)
+
     # Show summary of the selected model.
-    with st.expander(f'About this model ({st.session_state.tomo_model})', expanded=False):
-        model_about = pd.DataFrame(model_about_values[st.session_state.tomo_model], columns=['Value'], index=model_about_fields)
+    with st.expander(f'About this model ({available_models[st.session_state.tomo_model]})', expanded=True):
+        model_about = pd.DataFrame(model_about_values[available_models[st.session_state.tomo_model]], columns=['Value'], index=model_about_fields)
         model_about.at['Number of topics discovered', 'Value'] = model_num_topics
         st.dataframe(model_about)
 
-    # Page header.
-    st.title(header)
-    st.header(f'Number of user submitted reports: {model_about_values[st.session_state.tomo_model][5]}')
-    top10_container = st.expander('Top 10', expanded=True)
-
-    # Get the model's top 10 topics.
+    # Top 10 area.
     with top10_container:
         numcols = 5
         cols = st.columns(numcols)
         n = 0
         if len(st.session_state.tomo_top10) == 0:
-            # Request top 10 topics.
+
             response = requests.get(f'{api_url}/tomo/topics/get-topics', params={'num_topics': 10})
 
             # Show response as wordclouds.
@@ -168,87 +180,11 @@ def app():
                     r['topic_score'] = n + 1
 
                 # Display wordcloud.
-                n = display_topic_wordcloud_clickable(img, cols, numcols, n, r, top10_container)
+                n = display_topic_wordcloud_clickable(img, cols, numcols, n, r, result_container)
 
                 # Save wordcloud to session state.
                 st.session_state.tomo_top10.append([r, img])
 
         else:
             for (topic, img) in st.session_state.tomo_top10:
-                n = display_topic_wordcloud_clickable(img, cols, numcols, n, topic, top10_container)
-
-    # Query area.
-    with st.expander('Query', expanded=False):
-
-        with st.form(key='tomo_form'):
-            query = st.text_area(
-                label='',
-                height=200,
-                max_chars=1000,
-                help='Tell us what you are thinking',
-                placeholder='Enter your request/report here...')
-            submitted = st.form_submit_button(label='Submit')
-
-        if submitted:
-            st.session_state.query = query
-
-        # Prepare ner classification request from the query.
-        request = json.dumps(PredictionRequest(
-            query_string=st.session_state.query,
-            num_topics=st.session_state.num_topics,
-            topics_reduced=st.session_state.topics_reduced
-        ).__dict__)
-
-        # Prepare topic query request from the query.
-        request = json.dumps(PredictionRequest(
-            query_string=st.session_state.query,
-            num_topics=st.session_state.num_topics,
-            topics_reduced=st.session_state.topics_reduced
-        ).__dict__)
-
-        # If query is empty, reset the session state.
-        if st.session_state.query == '':
-            del st.session_state.tomo_wordclouds
-            st.session_state.tomo_wordclouds = []
-            st.session_state.last_request = ''
-        else:
-            # Show header before wordclouds.
-            st.subheader('Similar topics: (% cosine similarity)')
-
-            result_container = st.container()
-
-            # Send topic query and show response as wordclouds.
-            # If query/num_topics/reduced hasn't changed, use the stored response.
-            numcols = 5
-            cols = st.columns(numcols)
-            if not (submitted or ((st.session_state.query == query) and (st.session_state.num_topics == num_topics) and (st.session_state.topics_reduced == topics_reduced))):
-
-                # If parameters haven't changed, show the previous wordclouds.
-                n = 0
-                for (topic, img) in st.session_state.tomo_wordclouds:
-                    n = display_topic_wordcloud_clickable(img, cols, numcols, n, topic, result_container)
-
-            else:
-                del st.session_state.tomo_wordclouds
-                st.session_state.tomo_wordclouds = []
-
-                # Send request to the server and get the response.
-                response = requests.post(f'{api_url}/tomo/topics/query', data=request)
-
-                # Show response as wordclouds.
-                n = 0
-                bgcolor = random.choice(wordcloud_backgrounds)
-                for r in response.json():
-                    # Generate wordcloud from words/scores.
-                    topic_word_scores = dict(zip(r['topic_words'][:numwords_per_topic], softmax(r['word_scores'][:numwords_per_topic])))
-                    img = WordCloud(width=320, height=240, background_color=bgcolor).generate_from_frequencies(topic_word_scores).to_image()
-                    
-                    # Display wordcloud.
-                    n = display_topic_wordcloud_clickable(img, cols, numcols, n, r, result_container)
-
-                    # Save wordcloud to session state.
-                    st.session_state.tomo_wordclouds.append([r, img])
-
-                # Save session state.
-                st.session_state.last_request = request
-                st.session_state.numwords_per_topic = numwords_per_topic
+                n = display_topic_wordcloud_clickable(img, cols, numcols, n, topic, result_container)

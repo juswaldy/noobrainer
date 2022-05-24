@@ -37,20 +37,16 @@ def app():
     setvar = setVars()
 
     # Page settings.
-    header = 'Hierarchical Clustering'
+    header = 'Historical Analysis'
 
-    # Load corpus.
-    corpus = pd.read_csv('data/health_tech_time.csv', low_memory=False).reset_index(drop=True).fillna('none')
-
-    # Show samples from corpus.
-    st.write('Samples from the corpus:')
-    cols = [ 'section_clean', 'title_clean', 'article_clean', 'date', 'num_words_per_article' ]
-    st.dataframe(corpus[cols].sample(3).reset_index(drop=True), height=500)
+    st.header(header)
 
     # Page elements.
     with st.sidebar:
         st.subheader(header)
         
+        clustr_filepath = st.selectbox('Choose a Corpus', sorted(glob('data/*')))
+
         with st.form(key='clustr_plot1_form'):
             st.write('**Step 1. Select a date range and submit**')
             # Get range and start date.
@@ -70,6 +66,19 @@ def app():
             st.write('**Step 3. Enter the number clusters seen from Step 2**')
             _n_clusters = int(st.text_input('Number of clusters (min 2)', '2'))
             plot3_submitted = st.form_submit_button(label='Submit')
+
+    # Load corpus.
+    if st.session_state.clustr_filepath == clustr_filepath:
+        corpus = st.session_state.clustr_corpus
+    else:
+        corpus = pd.read_csv(clustr_filepath, low_memory=False).reset_index(drop=True).fillna('none')
+        st.session_state.clustr_corpus = corpus
+        st.session_state.clustr_filepath = clustr_filepath
+
+    # Show samples from corpus.
+    st.write('Samples from the corpus:')
+    cols = [ 'section_clean', 'title_clean', 'article_clean', 'date', 'num_words_per_article' ]
+    st.dataframe(corpus[cols].sample(4).reset_index(drop=True), height=600)
 
     # Get keywords from the user.
     #keywords = st.text_input('Enter keywords separated by commas:')

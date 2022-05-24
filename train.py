@@ -241,6 +241,31 @@ def tomo_wholeshebang(args: argparse.Namespace) -> Tuple[DataFrame, float]:
                     result_df = DataFrame(result_rows, columns=['model_size', 'col_name', 'phrasing', 'period', 'topic_id', 'topic_words', 'word_scores'])
                     result_df.to_csv(result_file, index=False)
 
+def get_topn(model, infile, col, n):
+    dfin = pd.read_csv(infile)
+    results = []
+    chunk = 0
+    for i, x in dfin.iterrows():
+        # Get the top n topics for the current document.
+        topics_words, words_scores, topic_scores, topic_nums = model.query_topics(
+            query=x[col],
+            num_topics=n
+        )
+        results.append({'id': x.id, f'top{n}': topic_nums, f'top{n}_scores': topic_scores})
+
+        # Display every 1k row.
+        if i % 1000 == 0:
+            print(f'Processing #{i}', flush=True)
+
+        # Save every 200k rows.
+        if i % 200000 == 0:
+            chunk += 1
+            dfout = pd.DataFrame(results, columns=['id', f'top{n}', f'top{n}_scores'])
+            outfile = infile.split('.')[:-1].join('.')
+            outfile = '{}-{:02}.csv'.format(outfile, chunk)
+            print(f'############## Saving {outfile}', flush=True)
+            dfout.to_csv(outfile, index=None)
+            results = []
 
 """main"""
 def main():
@@ -256,12 +281,25 @@ def main():
         clustr()
     elif args.fn == 'tomo':
         if args.wholeshebang:
-            tomo_wholeshebang(args=args)
+            # Repurpose for temporal analysis.
+            # tomo_wholeshebang(args=args)
+
+            from top2vec import Top2Vec
+
+            # Load article model.
+            model = Top2Vec.load('models/tomo-all-87k-articles-single-21.pkl')
+
+            # Run for every article.
+            get_topn(model, 'data/news2.7m-gensim-articles.csv', 'article_clean', 3)
+
+            # Run for every title.
+            get_topn(model, 'data/news2.7m-gensim-titles.csv', 'title_clean', 3)
+
         else:
             df = pd.read_csv(args.trainfile)
             model, _ = tomo(
                 action=args.action,
-                df=df,
+                df=df.sample(n=250000, random_state=52),
                 col='article_clean',
                 model_name=args.modelname,
                 use_phrases=False,

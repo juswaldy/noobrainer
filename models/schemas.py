@@ -28,6 +28,7 @@ class Classification(BaseModel):
 # Topic Modeling schemas.
 
 class Document(BaseModel):
+    content: str
     score: float
     doc_id: int
 

@@ -29,21 +29,28 @@ st.set_page_config(
 # Set up session state.
 
 session_objects = {
+    'api_url': 'http://localhost:8000',
+    'tomo_header': 'Topics Most Common',
+    'clustr_header': 'Historical Analysis',
+    'ner_header': 'Test/Update the Model',
     'query': '',
     'num_topics': -1,
     'numwords_per_topic': -1,
     'topics_reduced': False,
     'last_request': '',
     'tomo_wordclouds': [],
-    'tomo_model': 'models/tomo-all-87k-articles-single-21.pkl',
+    'tomo_model': 0,
     'clustr_model': 'models/clustr-titles-single-17.pkl',
-    'ner_model': 'models/ner-healthtechother-articles-21.pkl',
+    'ner_wordclouds': [],
+    'ner_model': 0,
     'clustr_plot1': None,
     'clustr_plot2': None,
     'clustr_plot3': None,
     'clustr_plot4': None,
     'clustr_plot5': None,
     'clustr_df': {},
+    'clustr_filepath': '',
+    'clustr_corpus': None,
     'tomo_top10': []
 }
 for obj, val in session_objects.items():
@@ -54,6 +61,7 @@ for obj, val in session_objects.items():
 # Main app.
 
 app = MultiApp()
-app.add_app("Highest Ranking Topics", tomo.app)
-app.add_app("Historical Analysis", clustr.app)
+app.add_app(st.session_state.tomo_header, tomo.app)
+app.add_app(st.session_state.clustr_header, clustr.app)
+app.add_app(st.session_state.ner_header, ner.app)
 app.run()

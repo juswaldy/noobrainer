@@ -26,7 +26,16 @@ class Settings(BaseSettings):
     api_description: str = 'API for GLG Capstone by {bryantaekim, dslee47, juswaldy} @ gmail.com'
     
     # NER.
-    ner_model_path: str = 'models/ner-healthtechother-titles-21.pkl'
+    ner_model: object = None
+    ner_device: object = None
+    ner_tokenizer: object = None
+    # Set the maximum sequence length. 
+    # title -- using 128 to account for longer titles (up to ~15 words)
+    # article -- using 384 to take into account first ~50 words in an article 
+    ner_maxlen: int = 128
+
+    ner_model_path: str = 'models/ner-healthtechother-titles-23.pkl'
+    ner_labels: List = [ 'other', 'health', 'tech' ]
 
     # Clustering.
     clustr_model_path: str = 'models/clustr-health_tech-2020-01.pkl'
@@ -36,6 +45,7 @@ class Settings(BaseSettings):
     num_topics: int = 10
     topics_reduced: bool = False
     top2vec: object = None
+    has_documents: bool = False
 
 settings = Settings()
 
@@ -43,6 +53,8 @@ settings = Settings()
 # Load models and get them ready.
 
 settings.top2vec = tomo.load(settings.tomo_model_path)
+settings.has_documents = False if settings.top2vec.documents is None else True
+settings.ner_model, settings.ner_device, settings.ner_tokenizer = ner.load(settings.ner_model_path)
 
 ################################################################################
 
@@ -82,7 +94,7 @@ def _ner():
     description="Classification request for a query string",
     tags=["Named Entity Recognition"])
 async def ner_refresh(request: Classification):
-    return ner.classify(request.query_string)
+    return ner.classify(settings.ner_model, settings.ner_device, settings.ner_tokenizer, settings.ner_maxlen, request.query_string, settings.ner_labels)
 
 ################################################################################
 # Hierarchical Clustering endpoints.
@@ -169,33 +181,54 @@ async def search_topics_by_keywords(keyword_search: KeywordSearchTopic):
     tags=["Topic Modeling"])
 async def search_documents_by_topic(topic_num: int, num_docs: int):
     documents = []
-    docs, doc_scores, doc_ids = settings.top2vec.search_documents_by_topic(topic_num, num_docs)
-    for doc, score, num in zip(docs, doc_scores, doc_ids):
-        documents.append(Document(content=doc, score=score, doc_id=num))
+    if settings.has_documents:
+        docs, doc_scores, doc_ids = settings.top2vec.search_documents_by_topic(topic_num, num_docs)
+        for doc, score, num in zip(docs, doc_scores, doc_ids):
+            documents.append(Document(content=doc, score=score, doc_id=num))
+    else:
+        doc_scores, doc_ids = settings.top2vec.search_documents_by_topic(topic_num, num_docs)
+        for score, num in zip(doc_scores, doc_ids):
+            documents.append(Document(score=score, doc_id=num))
     return documents
 
 @app.post("/tomo/documents/search-by-keywords", response_model=List[Document], description="Search documents by keywords.",
           tags=["Topic Modeling"])
 async def search_documents_by_keywords(keyword_search: KeywordSearchDocument):
     documents = []
-    docs, doc_scores, doc_ids = settings.top2vec.search_documents_by_keywords(
-        keyword_search.keywords,
-        keyword_search.num_docs,
-        keyword_search.keywords_neg)
-    for doc, score, num in zip(docs, doc_scores, doc_ids):
-        documents.append(Document(content=doc, score=score, doc_id=num))
+    if settings.has_documents:
+        docs, doc_scores, doc_ids = settings.top2vec.search_documents_by_keywords(
+            keyword_search.keywords,
+            keyword_search.num_docs,
+            keyword_search.keywords_neg)
+        for doc, score, num in zip(docs, doc_scores, doc_ids):
+            documents.append(Document(content=doc, score=score, doc_id=num))
+    else:
+        doc_scores, doc_ids = settings.top2vec.search_documents_by_keywords(
+            keyword_search.keywords,
+            keyword_search.num_docs,
+            keyword_search.keywords_neg)
+        for score, num in zip(doc_scores, doc_ids):
+            documents.append(Document(score=score, doc_id=num))
     return documents
 
 @app.post("/tomo/documents/search-by-documents", response_model=List[Document], description="Find similar documents.",
           tags=["Topic Modeling"])
 async def search_documents_by_documents(document_search: DocumentSearch):
     documents = []
-    docs, doc_scores, doc_ids = settings.top2vec.search_documents_by_documents(
-        document_search.doc_ids,
-        document_search.num_docs,
-        document_search.doc_ids_neg)
-    for doc, score, num in zip(docs, doc_scores, doc_ids):
-        documents.append(Document(content=doc, score=score, doc_id=num))
+    if settings.has_documents:
+        docs, doc_scores, doc_ids = settings.top2vec.search_documents_by_documents(
+            document_search.doc_ids,
+            document_search.num_docs,
+            document_search.doc_ids_neg)
+        for doc, score, num in zip(docs, doc_scores, doc_ids):
+            documents.append(Document(content=doc, score=score, doc_id=num))
+    else:
+        doc_scores, doc_ids = settings.top2vec.search_documents_by_documents(
+            document_search.doc_ids,
+            document_search.num_docs,
+            document_search.doc_ids_neg)
+        for score, num in zip(doc_scores, doc_ids):
+            documents.append(Document(score=score, doc_id=num))
     return documents
 
 @app.post("/tomo/words/find-similar", response_model=List[WordResult], description="Search documents by keywords.",
