@@ -94,7 +94,8 @@ def _ner():
     description="Classification request for a query string",
     tags=["Named Entity Recognition"])
 async def ner_refresh(request: Classification):
-    return ner.classify(settings.ner_model, settings.ner_device, settings.ner_tokenizer, settings.ner_maxlen, request.query_string, settings.ner_labels)
+    query_string, class_num, class_str = ner.classify(settings.ner_model, settings.ner_device, settings.ner_tokenizer, settings.ner_maxlen, request.query_string, settings.ner_labels)
+    return Classification(query_string=query_string, class_num=class_num, class_str=class_str)
 
 ################################################################################
 # Hierarchical Clustering endpoints.

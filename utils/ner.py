@@ -54,12 +54,13 @@ def load(model_path: str) -> Tuple[object, object, object, object]:
     return model, device, tokenizer
 
 
-def classify(model: object, device: object, tokenizer: object, maxlen: int, query_string: str, labels: List) -> Tuple[str, int, str]:
+def classify(model: object, device: object, tokenizer: object, maxlen: int, query_string: str, ner_labels: List) -> Tuple[str, int, str]:
     # We need to add special tokens at the beginning and end of each sentence for XLNet to work properly
-    query_string = [sentence + " [SEP] [CLS]" for sentence in query_string]
+    query_list = [query_string]
+    query_list = [sentence + " [SEP] [CLS]" for sentence in query_list]
     labels = [ 1 ]
 
-    tokenized_texts = [tokenizer.tokenize(sent) for sent in query_string]
+    tokenized_texts = [tokenizer.tokenize(sent) for sent in query_list]
 
     # Use the XLNet tokenizer to convert the tokens to their index numbers in the XLNet vocabulary
     input_ids = [tokenizer.convert_tokens_to_ids(x) for x in tokenized_texts]
@@ -76,8 +77,8 @@ def classify(model: object, device: object, tokenizer: object, maxlen: int, quer
     prediction_inputs = torch.tensor(input_ids)
     prediction_masks = torch.tensor(attention_masks)
     prediction_labels = torch.tensor(labels)
-    
-    batch_size = 1  
+
+    batch_size = 1
 
     prediction_data = TensorDataset(prediction_inputs, prediction_masks, prediction_labels)
     prediction_sampler = SequentialSampler(prediction_data)
@@ -108,6 +109,6 @@ def classify(model: object, device: object, tokenizer: object, maxlen: int, quer
 
     # Flatten the predictions and true values for aggregate Matthew's evaluation on the whole dataset
     flat_predictions = [item for sublist in predictions for item in sublist]
-    class_num = np.argmax(flat_predictions, axis=1).flatten()
+    class_num = np.argmax(flat_predictions, axis=1).flatten()[0]
 
-    return query_string, class_num, labels[class_num]
+    return query_string, class_num, ner_labels[class_num]
