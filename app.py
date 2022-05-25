@@ -66,6 +66,6 @@ for obj, val in session_objects.items():
 
 app = MultiApp(logo)
 app.add_app(st.session_state.tomo_header, tomo.app)
-app.add_app(st.session_state.ner_header, ner.app)
 app.add_app(st.session_state.clustr_header, clustr.app)
+app.add_app(st.session_state.ner_header, ner.app)
 app.run()

@@ -130,6 +130,7 @@ def app():
         if st.session_state.clustr_plot4 is not None:
             st.image(st.session_state.clustr_plot4)
 
+    segment_detail_cols = ['segment', 'label', 'text']
     if plot3_submitted:
         clusters = clustering(st.session_state.tfidf_matrix, _n_clusters)
         xs, ys = reduce_dim(st.session_state.cos_sim, setvar.rand_state)
@@ -143,7 +144,7 @@ def app():
         st.session_state.clustr_plot5 = image
 
         with st.expander('See details', expanded=False):
-            st.dataframe(df, width=5000)
+            st.dataframe(df[segment_detail_cols], width=5000)
             segments = pd.DataFrame(df.segment.value_counts(), index=None)
             st.dataframe(segments)
     else:
@@ -152,6 +153,6 @@ def app():
             st.image(st.session_state.clustr_plot5)
             with st.expander('See details', expanded=False):
                 df = pd.DataFrame(st.session_state.clustr_df, index=None)
-                st.dataframe(df, width=5000)
+                st.dataframe(df[segment_detail_cols], width=5000)
                 segments = pd.DataFrame(df.segment.value_counts(), index=None)
                 st.dataframe(segments)
