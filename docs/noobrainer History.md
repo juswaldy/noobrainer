@@ -287,8 +287,7 @@ conda activate noobrainer
 pip install --no-cache-dir -r requirements.txt
 aws configure
 aws s3 cp s3://noobrainer/models ./models --recursive
-aws s3 cp s3://noobrainer/data/health_tech_time.csv ./data/health_tech_time.csv
-aws s3 cp s3://noobrainer/data/small-articles-single.csv ./data/small-articles-single.csv
+aws s3 cp s3://noobrainer/data/0_combined_set_60k_date.csv ./data/0_combined_set_60k_date.csv
 nohup uvicorn --host 0.0.0.0 --port 8000 --reload main:app &
 # Update app.py "About" to use the public ip address.
 streamlit run app.py
@@ -369,29 +368,25 @@ The concept of a topic is hard to grasp because it has at least 2 contradictory 
 When we're discussing a topic, and then a subtopic comes up, we don't call it _subtopic_, but we say, "That's a _topic_ for another day."
 
 
+
+
+
+
 ## The Deck Wed 25 May
 
 ```mermaid
 graph LR
-	Source(News 2.7M)
-	Preprocessed(Preprocessed)
-	Filtered(Filtered)
+	Source(Source<br>2.7M)
+	Preprocessed(Preprocessed<br>2.7M)
+	Filtered(Filtered<br>60K)
 	NER(NER)
 	Clustr(Clustering)
 	Tomo(Topic Modeling)
 	
-	Source -- pandas --> Preprocessed
-	Source -- gensim --> Preprocessed
+	Source --> Preprocessed
 	Preprocessed --> Filtered
 	Filtered --> Tomo
 	Filtered --> Clustr
     Filtered --> NER
-
 ```
-
-| Processed data source       | Number of rows | Model          |
-| --------------------------- | -------------- | -------------- |
-| 0_combined_set_60k_date.csv | 60,000         | Topic Modeling |
-| 0_combined_set_60k_date.csv | 60,000         | Clustering     |
-| 0_combined_set_60k_date.csv | 60,000         | NER            |
 

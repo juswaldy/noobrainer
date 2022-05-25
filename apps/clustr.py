@@ -85,13 +85,14 @@ def app():
         st.session_state.clustr_corpus = corpus
         st.session_state.corpus_filepath = corpus_filepath
 
-    # Show samples from corpus.
-    st.write('Samples from the corpus:')
-    cols = [ 'title_clean', 'label', 'date' ]
-    samples = corpus[cols].sample(4, random_state=52).reset_index(drop=True)
-    samples.label = [ st.session_state.ner_labels[i] for i in samples.label ]
-    samples.date = samples.date.apply(lambda x: x[:10])
-    st.dataframe(samples, height=600)
+    # If debug, show samples from corpus.
+    if st.session_state.debug:
+        st.write('Samples from the corpus:')
+        cols = [ 'title_clean', 'label', 'date' ]
+        samples = corpus[cols].sample(4, random_state=52).reset_index(drop=True)
+        samples.label = [ st.session_state.ner_labels[i] for i in samples.label ]
+        samples.date = samples.date.apply(lambda x: x[:10])
+        st.dataframe(samples, height=600)
 
     subset_cat = []
 
