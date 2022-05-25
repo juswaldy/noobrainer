@@ -1,6 +1,12 @@
 import streamlit as st
 import matplotlib.pyplot as plt
 import pandas as pd
+import requests
+import json
+import sys
+sys.path.append('../')
+from models.schemas import *
+from typing import Dict
 
 def display_topic_wordcloud(img, cols, numcols, n, topic_score):
     """ Display topic wordcloud """
@@ -92,3 +98,25 @@ def applystyle_button(topic_num, n_buttons):
         else:
             style += unclicked_style % get_button_indices(ix)
     st.markdown(f"<style>{style}</style>", unsafe_allow_html=True)
+
+def get_topics_nerlabels() -> Dict[int, str]:
+    """ Get topic nerlabel """
+
+    api_url = 'http://localhost:8000'
+    num_topics = 40
+    results = {}
+
+    # Get the top 40 topics.
+    response = requests.get(f'{api_url}/tomo/topics/get-topics', params={'num_topics': num_topics})
+
+    # Go through each topic and request a class label from the NER backend.
+    for topic in response.json():
+        request = json.dumps(Classification(
+            query_string=' '.join(topic['topic_words']),
+            class_num=-1,
+            class_str=''
+        ).__dict__)
+        response = requests.post(f'{api_url}/ner/classify', data=request).json()
+        results[topic['topic_num']] = response['class_str']
+
+    return results
