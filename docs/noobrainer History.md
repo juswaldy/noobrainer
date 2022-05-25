@@ -370,3 +370,28 @@ When we're discussing a topic, and then a subtopic comes up, we don't call it _s
 
 
 ## The Deck Wed 25 May
+
+```mermaid
+graph LR
+	Source(News 2.7M)
+	Preprocessed(Preprocessed)
+	Filtered(Filtered)
+	NER(NER)
+	Clustr(Clustering)
+	Tomo(Topic Modeling)
+	
+	Source -- pandas --> Preprocessed
+	Source -- gensim --> Preprocessed
+	Preprocessed --> Filtered
+	Filtered --> Tomo
+	Filtered --> Clustr
+    Filtered --> NER
+
+```
+
+| Processed data source       | Number of rows | Model          |
+| --------------------------- | -------------- | -------------- |
+| 0_combined_set_60k_date.csv | 60,000         | Topic Modeling |
+| 0_combined_set_60k_date.csv | 60,000         | Clustering     |
+| 0_combined_set_60k_date.csv | 60,000         | NER            |
+
