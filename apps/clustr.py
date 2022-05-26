@@ -30,6 +30,13 @@ def fig2img(figure):
     im = Image.open(img_buf)
     return im
 
+def get_clusters(tfidf_matrix, cos_sim, labels, raw_text, n_clusters, rand_state):
+    clusters = clustering(tfidf_matrix, n_clusters)
+    xs, ys = reduce_dim(cos_sim, rand_state)
+    df = pd.DataFrame(dict(x=xs, y=ys, segment=clusters, label=labels, text=raw_text.values), index=None)
+    segments = pd.DataFrame(df.segment.value_counts(), index=None)
+    return segments
+
 def app():
     """ Hierarchical Clustering app """
 
@@ -53,14 +60,9 @@ def app():
                 st.write('**Step 1. Select a date range**')
 
             # Get range and start date.
-            start_date = st.date_input('Starting date', datetime(2018, 10, 31))
-            if st.session_state.debug:
-                num_days = st.slider('Number of days', 1, 31, 31)
-            else:
-                # If not debug, set number of days to 3.
-                num_days = 3
+            start_date = st.date_input('Starting date', datetime(2018, 3, 30))
+            num_days = st.slider('Number of days', 1, 31, 3)
             end_date = start_date + timedelta(days=num_days)
-            st.write(f'Range: {start_date} to {end_date}')
             plot1_submitted = st.form_submit_button(label='Submit')
 
         if st.session_state.debug:
@@ -71,10 +73,10 @@ def app():
                 distance_threshold = int(distance_threshold) if distance_threshold.isdigit() else 0
                 plot2_submitted = st.form_submit_button(label='Submit')
 
-            with st.form(key='clustr_plot3_form'):
-                st.write('**Step 3. Clusters from Step 2**')
-                _n_clusters = int(st.text_input('Number of clusters (min 2)', '2'))
-                plot3_submitted = st.form_submit_button(label='Submit')
+        with st.form(key='clustr_plot3_form'):
+            st.write('**Step 2. Number of clusters**')
+            _n_clusters = int(st.text_input('Number of clusters (min 2)', '2'))
+            plot3_submitted = st.form_submit_button(label='Submit')
 
     # Load corpus.
     if st.session_state.corpus_filepath == corpus_filepath and st.session_state.clustr_corpus:
@@ -85,10 +87,15 @@ def app():
         st.session_state.clustr_corpus = corpus
         st.session_state.corpus_filepath = corpus_filepath
 
+        # Show default plot and segments.
+        plot1_submitted = True
+        plot3_submitted = True
+
+    cols = [ 'title_clean', 'label', 'date' ]
+
     # If debug, show samples from corpus.
     if st.session_state.debug:
         st.write('Samples from the corpus:')
-        cols = [ 'title_clean', 'label', 'date' ]
         samples = corpus[cols].sample(4, random_state=52).reset_index(drop=True)
         samples.label = [ st.session_state.ner_labels[i] for i in samples.label ]
         samples.date = samples.date.apply(lambda x: x[:10])
@@ -124,7 +131,7 @@ def app():
         st.session_state.raw_text = _raw_text
     else:
         # If plots exist, display them.
-        if st.session_state.clustr_plot1 is not None:
+        if st.session_state.clustr_plot2 is not None:
             if st.session_state.debug:
                 st.image(st.session_state.clustr_plot1)
             st.image(st.session_state.clustr_plot2)
@@ -145,29 +152,25 @@ def app():
                 st.image(st.session_state.clustr_plot4)
 
     segment_detail_cols = ['segment', 'label', 'text']
-    if st.session_state.debug:
-        if plot3_submitted:
-            clusters = clustering(st.session_state.tfidf_matrix, _n_clusters)
-            xs, ys = reduce_dim(st.session_state.cos_sim, setvar.rand_state)
+    if plot3_submitted:
+        clusters = clustering(st.session_state.tfidf_matrix, _n_clusters)
+        xs, ys = reduce_dim(st.session_state.cos_sim, setvar.rand_state)
 
-            df = pd.DataFrame(dict(x=xs, y=ys, segment=clusters, label=st.session_state.labels, text=st.session_state.raw_text.values), index=None)
-            st.session_state.clustr_df = df.to_dict()
+        df = pd.DataFrame(dict(x=xs, y=ys, segment=clusters, label=st.session_state.labels, text=st.session_state.raw_text.values), index=None)
+        st.session_state.clustr_df = df.to_dict()
 
+        if st.session_state.debug:
             fig = plot_clusters(df)
             st.pyplot(fig)
             image = fig2img(fig)
             st.session_state.clustr_plot5 = image
+            st.dataframe(df[segment_detail_cols], width=5000)
 
-            with st.expander('See details', expanded=False):
-                st.dataframe(df[segment_detail_cols], width=5000)
-                segments = pd.DataFrame(df.segment.value_counts(), index=None)
-                st.dataframe(segments)
-        else:
-            # If plots exist, display them.
-            if st.session_state.clustr_plot5 is not None:
-                st.image(st.session_state.clustr_plot5)
-                with st.expander('See details', expanded=False):
-                    df = pd.DataFrame(st.session_state.clustr_df, index=None)
-                    st.dataframe(df[segment_detail_cols], width=5000)
-                    segments = pd.DataFrame(df.segment.value_counts(), index=None)
-                    st.dataframe(segments)
+        segments = pd.DataFrame(df.segment.value_counts(), index=None)
+        st.dataframe(segments)
+    else:
+        # If df exists, display it.
+        if len(st.session_state.clustr_df) > 0:
+            df = pd.DataFrame(st.session_state.clustr_df, index=None)
+            segments = pd.DataFrame(df.segment.value_counts(), index=None)
+            st.dataframe(segments)

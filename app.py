@@ -34,7 +34,7 @@ session_objects = {
     'api_url': 'http://localhost:8000',
     'tomo_header': 'Most Common Topics in Corpus',
     'clustr_header': 'Hierarchical Clustering over Time',
-    'ner_header': 'Test and Update the Model',
+    'ner_header': 'Test and Update Model',
     'query': '',
     'num_topics': -1,
     'numwords_per_topic': -1,

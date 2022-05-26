@@ -105,11 +105,10 @@ def app():
                 cols[i].write(f'{x.email}')
                 cols[i].write(f'{x.phone}')
 
-    if st.session_state.debug:
-        st.header('Update Model')
-        with st.form(key='model_update_form'):
-            c1, c2 = st.columns([1, 4])
-            c1.text_input('New Label')
-            c2.file_uploader("Choose a CSV file", accept_multiple_files=True)
-            st.text_area('Keywords for New Label', height=200, max_chars=1000, placeholder='Enter additional keywords here, separated by commas')
-            st.form_submit_button(label='Update Model')
+    st.header('Update Model')
+    with st.form(key='model_update_form'):
+        c1, c2 = st.columns([1, 4])
+        c1.text_input('New Label')
+        c2.file_uploader("Choose a CSV file", accept_multiple_files=True)
+        st.text_area('Keywords for New Label', height=200, max_chars=1000, placeholder='Enter additional keywords here, separated by commas')
+        st.form_submit_button(label='Update Model')
