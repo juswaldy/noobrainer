@@ -379,7 +379,7 @@ graph LR
 	Source(Source<br>2.7M)
 	Preprocessed(Preprocessed<br>2.7M)
 	Filtered(Filtered<br>60K)
-	NER(NER)
+	NER(Classifying)
 	Clustr(Clustering)
 	Tomo(Topic Modeling)
 	
@@ -388,5 +388,25 @@ graph LR
 	Filtered --> Tomo
 	Filtered --> Clustr
     Filtered --> NER
+```
+
+
+
+```mermaid
+graph LR
+	data(Processed<br>Data)
+	s3(AWS<br>S3 Bucket)
+	ec2(AWS<br>EC2 Instance)
+	ner(Classifying<br>XLNet)
+	clustr(Clustering<br>TF-IDF)
+	tomo(Topic Modeling<br>Top2Vec)
+	st(Streamlit<br>Frontend)
+	api(FastAPI)
+	
+	data --> s3 --> ec2
+	ec2 --> ner --> api --> st
+	ec2 --> tomo --> api
+	ec2 --> clustr --> st
+	
 ```
 
