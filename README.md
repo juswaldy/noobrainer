@@ -80,6 +80,7 @@ cd noobrainer
 ```bash
 source activate tensorflow2_p38
 pip install --no-cache-dir -r requirements.txt
+```
 
 ### Continue with Step 4 and 5 above
 
