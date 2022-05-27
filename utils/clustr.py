@@ -244,7 +244,7 @@ def plot_dendrogram(cos_sim, target, _p=30, _trunc_mode=None, fw=15, fh=10, zoom
                )
     if zoom_in:
         plt.xlim(0, zoom_xlim)
-        plt.title('Dendrogram - zoomed in up to '+ str(zoom_xlim))
+        plt.title('')
     else:
         plt.title('Dendrogram - All data points')
     

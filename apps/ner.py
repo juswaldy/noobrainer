@@ -68,11 +68,11 @@ def app():
     # Query area.
     with st.form(key='ner_form'):
         query = st.text_area(
-            label='Test User Report',
+            label='Test Request',
             height=200,
             max_chars=1000,
             help='Tell us what you are thinking',
-            placeholder='Enter your request/report here...')
+            placeholder='Enter your request here...')
         submitted = st.form_submit_button(label='Submit')
 
     if submitted:

@@ -410,3 +410,32 @@ graph LR
 	
 ```
 
+
+
+## Demo Thu 26 May
+
+
+
+
+
+### Top2Vec Algorithm
+
+```mermaid
+graph LR
+	words(Words)
+	docs(Documents)
+	wordvecs(Word<br>Embeddings)
+	docvecs(Document<br>Embeddings)
+	join(Join using<br>doc2vec)
+	similarity(Cosine similarity<br>5 dimensions)
+	umap(UMAP<br>2 dims)
+	hdbscan(HDBSCAN<br>15 neighbors)
+	dense(Dense areas)
+	centroids(Get centroids<br>aka Topic Vector)
+	wordvec(50 closest Word Vectors<br> to the Topic Vector)
+	words -- doc2vec<br>universal-sentence-encoder<br>bert --> wordvecs --> join
+	docs --> docvecs --> join
+	join --> similarity --> umap --> hdbscan --> dense
+	docvecs --> dense --> centroids --> wordvec
+```
+

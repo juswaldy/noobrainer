@@ -75,7 +75,7 @@ def app():
 
         with st.form(key='clustr_plot3_form'):
             st.write('**Step 2. Number of clusters**')
-            _n_clusters = int(st.text_input('Number of clusters (min 2)', '2'))
+            _n_clusters = int(st.text_input('Number of clusters (min 2)', '3'))
             plot3_submitted = st.form_submit_button(label='Submit')
 
     # Load corpus.
@@ -164,10 +164,11 @@ def app():
             st.pyplot(fig)
             image = fig2img(fig)
             st.session_state.clustr_plot5 = image
-            st.dataframe(df[segment_detail_cols], width=5000)
 
         segments = pd.DataFrame(df.segment.value_counts(), index=None)
         st.dataframe(segments)
+        st.dataframe(df[df['segment']==2][segment_detail_cols], width=5000)
+        st.dataframe(df[df['segment']==1][segment_detail_cols], width=5000)
     else:
         # If df exists, display it.
         if len(st.session_state.clustr_df) > 0:

@@ -32,8 +32,8 @@ st.set_page_config(
 session_objects = {
     'debug': False,
     'api_url': 'http://localhost:8000',
-    'tomo_header': 'Most Common Topics in Corpus',
-    'clustr_header': 'Hierarchical Clustering over Time',
+    'tomo_header': 'Most Common Topics',
+    'clustr_header': 'Hierarchical Clustering',
     'ner_header': 'Test and Update Model',
     'query': '',
     'num_topics': -1,

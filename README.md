@@ -1,15 +1,18 @@
 # noobrainer
 
-This here is the repo for our MLE capstone project at [fourthbrain.ai](https://www.fourthbrain.ai/), cohort 6. The domain we have chosen is Natural Language Processing, specifically Automated Metadata Tagging and Topic Modeling.
+This here is a repo for our MLE capstone project at [fourthbrain.ai](https://www.fourthbrain.ai/), cohort 6. The domain we have chosen is Natural Language Processing, specifically Automated Metadata Tagging and Topic Modeling.
 
-## Usage: The First Time
 
-### 1. Create an EC2 instance and ssh into it
+## Usage
 
-- Choose image type: `Deep Learning AMI (Ubuntu 18.04) Version 60.2`
-- Choose instance type: `g4dn.*`. The one we use for the demo is `g4dn.2xlarge`, but any size >= `large` should work fine. Note: We tried using `g4ad` instances and had trouble getting it to work with the GPU
-- Copy its public ip dns to clipboard
-- ssh into it
+### On your local machine
+
+### 1. Minimum requirements
+
+- 16G of RAM
+- [CUDA enabled GPU](https://developer.nvidia.com/cuda-gpus) with at least 4GB of memory
+- Ubuntu 18.04 LTS
+- Python 3.8
 
 ### 2. Clone this repo
 
@@ -18,12 +21,11 @@ git clone https://github.com/juswaldy/noobrainer.git
 cd noobrainer
 ```
 
-(Optional) Update the `instance_url` setting in app.py to point to the public ip dns. This will enable the streamlit "About" section to reach your instance api/backend.
-
-### 3. Activate GPU environment and install requirements
+### 3. Install requirements in a conda environment
 
 ```bash
-source activate tensorflow2_p38
+conda create -n noobrainer python=3.8
+source activate noobrainer
 pip install --no-cache-dir -r requirements.txt
 ```
 
@@ -52,25 +54,47 @@ nohup streamlit run app.py &
 
 The API server is running on port `8000`. The frontend is running on port `8501`.
 
-Don't forget to stop the instance when you're not using it anymore.
 
-## Usage: Afterwards
+### On AWS EC2
 
-- Start up the instance
+This is how we deployed our first demo version and published it.
+
+<details><summary>Show/hide</summary>
+
+### 1. Create an EC2 instance and ssh into it
+
+- Choose image type: `Deep Learning AMI (Ubuntu 18.04) Version 60.2`
+- Choose instance type: `g4dn.*`. The one we use for the demo is `g4dn.2xlarge`, but any size >= `large` should work fine. Note: We tried using `g4ad` instances and had trouble getting it to work with the GPU
 - Copy its public ip dns to clipboard
 - ssh into it
-- Run this:
+
+### 2. Clone this repo
+
+```bash
+git clone https://github.com/juswaldy/noobrainer.git
+cd noobrainer
+```
+
+### 3. Activate GPU environment and install requirements
+
 ```bash
 source activate tensorflow2_p38
-cd noobrainer
-nohup uvicorn --host 0.0.0.0 --port 8000 --reload main:app &
-nohup streamlit run app.py &
-```
+pip install --no-cache-dir -r requirements.txt
+
+### Continue with Step 4 and 5 above
+
+Don't forget to stop the instance when you're not using it anymore.
+
+</details>
+
 
 ## Shoutouts
 
 - [Fourthbrain.ai](https://www.fourthbrain.ai/) staff especially Bruno Janota!
 - LDA Topic Models [video](https://www.youtube.com/watch?v=3mHy4OSyRf0) by Andrius Knispelis!
 - [Top2Vec](https://github.com/ddangelov/Top2Vec) by Dimo Angelov!
+- [fastapi](https://fastapi.tiangolo.com/) by Sebastián Ramírez!
+- [streamlit](https://streamlit.io/) by Streamlit!
 - [python-stat-tools](https://github.com/harmkenn/python-stat-tools) by Ken Harmon!
 - [st-click-detector](https://github.com/vivien000/st-click-detector) by Vivien Tran-Thien!
+- University of South Florida [ClipArt ETC](https://etc.usf.edu/clipart/)!
