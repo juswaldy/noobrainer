@@ -37,16 +37,20 @@ def get_topic_header(topic: object) -> str:
     # Otherwise it's just an index for top 10, so display the index+1 (starting at 1).
     return 'Topic #{} ({:.1%})'.format(topic['topic_num'], topic['topic_score']) if type(topic['topic_score']) == float else f'Topic #{topic["topic_num"]+1}'
 
-def show_topic_detail(topic: object, container: object) -> None:
+def show_topic_detail(topic: object, container: object, num_topics: int, num_words: int) -> None:
     """ Show topic details in the provided container """
     num, score, words, word_scores = topic['topic_num'], topic['topic_score'], topic['topic_words'], topic['word_scores']
-    applystyle_button(topic['topic_num'], 40)
+    applystyle_button(topic['topic_num'], num_topics)
     with container:
         st.header(get_topic_header(topic))
-        df = pd.DataFrame({'word': words, 'score': word_scores})
+        df = pd.DataFrame({'word': words, 'score': word_scores})[:num_words]
         df = df.groupby('word')[['score']].sum()
         df = df.sort_values(by='word')
         st.bar_chart(df)
+
+        #import plotly.express as px 
+        #fig = px.bar(df, x='word',y='score', orientation='h')
+        #st.write(fig)
 
         # Read in topic specialists.
         sme = pd.read_csv(st.session_state.sme_filepath)
@@ -56,7 +60,7 @@ def show_topic_detail(topic: object, container: object) -> None:
         top3_sme = sme[sme.label==topic_labels[num]].sample(3)
 
         # Show topic specialists.
-        st.subheader(top3_sme.jobtitle.values[0])
+        st.subheader(f"Subject Matter Expert in: {top3_sme.jobtitle.values[0].split(' ')[0]}")
 
         cols = st.columns(3)
         for i in range(3):
@@ -69,7 +73,7 @@ def show_topic_detail(topic: object, container: object) -> None:
                 cols[i].write(f'{x.email}')
                 cols[i].write(f'{x.phone}')
 
-def display_topic_wordcloud_clickable(img, cols, numcols, n, topic, container) -> int:
+def display_topic_wordcloud_clickable(img, cols, numcols, n, topic, container, num_topics, num_words) -> int:
     """ Display clickable topic wordcloud """
     with cols[n].container():
         topic_header = get_topic_header(topic)
@@ -78,7 +82,7 @@ def display_topic_wordcloud_clickable(img, cols, numcols, n, topic, container) -
         cols[n].button(topic_header,
             key=topic['topic_num'],
             on_click=show_topic_detail,
-            kwargs={'topic': topic, 'container': container})
+            kwargs={'topic': topic, 'container': container, 'num_topics': num_topics, 'num_words': num_words})
         
         # Display the wordcloud.
         cols[n].image(img, use_column_width=True)
@@ -145,7 +149,7 @@ def app():
         else:
             tomo_model = st.session_state.tomo_model
         num_topics = st.slider('Number of topics', min_value=1, max_value=40, value=10)
-        # topics_reduced = st.session_state.topics_reduced = st.checkbox('Topics reduced', value=False)
+        # topics_reduced = st.checkbox('Topics reduced', value=False)
         numwords_per_topic = st.slider('Number of words per topic', min_value=5, max_value=50, value=20)
 
     # If a different model is selected, request a model refresh.
@@ -167,7 +171,8 @@ def app():
 
     # Page header.
     st.header(header)
-    st.subheader(f'# of reports: {model_about_values[available_models[st.session_state.tomo_model]][5]}')
+    if st.session_state.debug:
+        st.subheader(f'# of reports: {model_about_values[available_models[st.session_state.tomo_model]][5]}')
     top10_container = st.container()
     result_container = st.expander('Results', expanded=True)
 
@@ -196,15 +201,12 @@ def app():
                 topic_word_scores = dict(zip(r['topic_words'][:numwords_per_topic], softmax(r['word_scores'][:numwords_per_topic])))
                 img = WordCloud(width=320, height=240, background_color=bgcolor).generate_from_frequencies(topic_word_scores).to_image()
                 
-                if st.session_state.debug:
-                    st.write(f"{r['topic_num']} - {' '.join(r['topic_words'][:20])}")
-
                 # Ensure a topic_score: either an actual float score from the server, or the index+1.
                 if 'topic_score' not in r:
                     r['topic_score'] = n + 1
 
                 # Display wordcloud.
-                n = display_topic_wordcloud_clickable(img, cols, numcols, n, r, result_container)
+                n = display_topic_wordcloud_clickable(img, cols, numcols, n, r, result_container, num_topics, numwords_per_topic)
 
                 # Save settings and wordclouds to session state.
                 st.session_state.tomo_top10.append([r, img])
@@ -213,4 +215,4 @@ def app():
 
         else:
             for (topic, img) in st.session_state.tomo_top10:
-                n = display_topic_wordcloud_clickable(img, cols, numcols, n, topic, result_container)
+                n = display_topic_wordcloud_clickable(img, cols, numcols, n, topic, result_container, num_topics, numwords_per_topic)
