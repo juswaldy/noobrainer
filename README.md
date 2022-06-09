@@ -48,9 +48,9 @@ We implemented 3 different models:
 ### Training
 
 We used [Google Colab](https://colab.research.google.com/) to train our models.
-- Topic Modeling: [train.py](utils/train.py). Also see [Week13_02.Top2Vec Explorations.ipynb](apps\old\prelim\Dev_Jus\Week13_02.Top2Vec%20dExplorations.ipynb)
+- Topic Modeling: [train.py](models/train.py). Also see [Week13_02.Top2Vec Explorations.ipynb](apps/old/prelim/Dev_Jus/Week13_02.Top2Vec%20Explorations.ipynb)
 - Classifying: [0_NER_XLNet_model_final_balanced.ipynb](models/0_NER_XLNet_model_final_balanced.ipynb)
-- Clustering: [clustr.py](utils/clustr.py). Also see [2_4bcapstone_glg_clustering_BryanKim_v4_1.ipynb](apps\old\prelim\Dev_Bryan\2_4bcapstone_glg_clustering_BryanKim_v4_1.ipynb)
+- Clustering: [clustr.py](utils/clustr.py). Also see [2_4bcapstone_glg_clustering_BryanKim_v4_1.ipynb](apps/old/prelim/Dev_Bryan/2_4bcapstone_glg_clustering_BryanKim_v4_1.ipynb)
 
 ### Deployment
 
@@ -113,7 +113,7 @@ pip install --no-cache-dir -r requirements.txt
 
 ### 4. Prepare data and train the models
 
-Download the corpus from [here](https://components.one/datasets/all-the-news-2-news-articles-dataset/), and prepare it using the notebook [1. Preprocess using gensim simple_preprocess.ipynb](data/1.%20dPreprocess%20dusing%20dgensim%20dsimple_preprocess.ipynb).
+Download the corpus from [here](https://components.one/datasets/all-the-news-2-news-articles-dataset/), and prepare it using the notebook [1. Preprocess using gensim simple_preprocess.ipynb](data/1.%20Preprocess%20using%20gensim%20simple_preprocess.ipynb).
 
 Train the XLNet Classification model using [0_NER_XLNet_model_final_balanced.ipynb](models/0_NER_XLNet_model_final_balanced.ipynb), and save the results in the `models` folder.
 
