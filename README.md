@@ -1,6 +1,6 @@
 # noobrainer
 
-This here is a repo for our MLE capstone project at [fourthbrain.ai](https://www.fourthbrain.ai/), cohort 6. The domain we have chosen is Natural Language Processing, specifically Automated Metadata Tagging and Topic Modeling.
+This is a repo for our Machine Learning Engineer capstone project at [fourthbrain.ai](https://www.fourthbrain.ai/), cohort 6. The domain we have chosen is Natural Language Processing, specifically Automated Metadata Tagging and Topic Modeling.
 
 ## The Problem
 
