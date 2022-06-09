@@ -26,6 +26,7 @@ graph LR
     Corpus -- gensim +<br>balance --> data
 	data -- Google<br>Colab --> model --> s3
     data --> s3
+    api --> Apps
 	s3 --> ner --> api --> st
 	s3 --> tomo --> api
 	s3 --> clustr --> st
