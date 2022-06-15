@@ -19,6 +19,7 @@ from typing import Tuple
 import json
 import os
 from timeit import default_timer as timer
+import tensorflow as tf
 
 
 """ Configs """
@@ -41,17 +42,18 @@ class Configs:
 
 """ Argument parsing and checking """
 def parse_args() -> argparse.Namespace:
-	desc = 'Train a model for our GLG capstone project'
-	parser = argparse.ArgumentParser(description=desc)
-	parser.add_argument('--fn', type=str, default='tomo', help='ner, clustr, or tomo', required=True)
-	parser.add_argument('--modelname', type=str, default='universal-sentence-encoder', help='Which model are we working on?', required=False)
-	parser.add_argument('--action', type=str, default='train', help='train, test, inference', required=True)
-	parser.add_argument('--trainfile', type=str, default='./data/health_tech_time.csv', help='Path to the training file', required=False)
-	parser.add_argument('--testfile', type=str, default='./data/health_tech_time_test.csv', help='Path to the test file', required=False)
-	parser.add_argument('--wholeshebang', action='store_true', help='Do the whole-shebang for the specified model?', required=False)
-	parser.add_argument('--outputfolder', type=str, default='./models', help='Output folder', required=False)
-	parser.add_argument('--outputfile', type=str, default='z.pkl', help='Output filename', required=False)
-	return check_args(parser.parse_args())
+    desc = 'Train a model for our GLG capstone project'
+    parser = argparse.ArgumentParser(description=desc)
+    parser.add_argument('--fn', type=str, default='tomo', help='ner, clustr, or tomo', required=True)
+    parser.add_argument('--modelname', type=str, default='universal-sentence-encoder', help='Which model are we working on?', required=False)
+    parser.add_argument('--action', type=str, default='train', help='train, test, inference', required=True)
+    parser.add_argument('--trainfile', type=str, default='./data/health_tech_time.csv', help='Path to the training file', required=False)
+    parser.add_argument('--testfile', type=str, default='./data/health_tech_time_test.csv', help='Path to the test file', required=False)
+    parser.add_argument('--usebigrams', action='store_true', help='Use bigrams?', required=False)
+    parser.add_argument('--wholeshebang', action='store_true', help='Do the whole-shebang for the specified model?', required=False)
+    parser.add_argument('--outputfolder', type=str, default='./models', help='Output folder', required=False)
+    parser.add_argument('--outputfile', type=str, default='z.pkl', help='Output filename', required=False)
+    return check_args(parser.parse_args())
 
 def check_args(args: argparse.Namespace) -> argparse.Namespace:
 	return args
@@ -296,13 +298,23 @@ def main():
             get_topn(model, 'data/news2.7m-gensim-articles.csv', 'article_clean', 3)
 
         else:
-            df = pd.read_csv(args.trainfile)
+            gpus = tf.config.list_physical_devices('GPU')
+            if gpus:
+                try:
+                    for gpu in gpus:
+                        tf.config.experimental.set_memory_growth(gpu, True)
+                        logical_gpus = tf.config.list_logical_devices('GPU')
+                        print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+                except RuntimeError as e:
+                    print(e)
+
+            df = pd.read_csv(args.trainfile, low_memory=False)
             model, _ = tomo(
                 action=args.action,
                 df=df,
                 col='title_clean',
                 model_name=args.modelname,
-                use_phrases=False,
+                use_phrases=args.usebigrams,
                 speed='deep-learn',
                 workers=8
             )
